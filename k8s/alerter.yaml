@@ -36,13 +36,25 @@ spec:
       - name: aliyun-registry
       containers:
       - name: alerter
-        image: loghawk/alerter:v1.0.0
+        image: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen/alerter:v1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8004
         env:
         - name: ALERTER_PORT
           value: '8004'
+        - name: RABBITMQ_HOST
+          value: 'rabbitmq.loghawk'
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_PASS
         resources:
           requests:
             memory: 16Mi

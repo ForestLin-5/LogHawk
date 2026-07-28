@@ -51,13 +51,25 @@ spec:
       - name: aliyun-registry
       containers:
       - name: ingest
-        image: loghawk/ingest:v1.0.0
+        image: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen/ingest:v1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8001
         env:
         - name: INGEST_PORT
           value: '8001'
+        - name: RABBITMQ_HOST
+          value: 'rabbitmq.loghawk'
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_PASS
         resources:
           requests:
             memory: 16Mi

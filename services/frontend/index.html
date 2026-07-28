@@ -2180,6 +2180,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setInterval(function() { try { fetchRealStats(); } catch(e) {} }, 5000);
   setInterval(function() { try { updateCharts(); } catch(e) {} }, 2000);
   setInterval(function() { try { fetchLogs(); } catch(e) {} }, 3000);
+  setInterval(function() { try { fetchAlerts(); } catch(e) {} }, 5000);
 
   // button listeners
   try { bindLogControls(); } catch(e) { console.error('[LogHawk] bindLogControls failed:', e); }
@@ -2298,6 +2299,45 @@ function fetchRealStats() {
       }
     }).catch(function() {});
     updateAlertBadge();
+  }).catch(function() {});
+}
+
+/* ===== ALERT FETCH (from Alerter) ===== */
+function fetchAlerts() {
+  var host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return;
+  fetch('/api/alerter/alerts').then(function(r) {
+    return r.ok ? r.json() : null;
+  }).then(function(alerts) {
+    if (!alerts || !alerts.length) return;
+    // Replace state.alerts with latest from server (dedup by ID)
+    var newAlerts = [];
+    var seen = {};
+    var existing = {};
+    state.alerts.forEach(function(a) { existing[a.id || ''] = true; });
+    alerts.forEach(function(a) {
+      var id = a.id || (a.timestamp + a.title);
+      if (seen[id]) return;
+      seen[id] = true;
+      if (!existing[id]) newAlerts.push({
+        level: a.level,
+        title: a.title,
+        desc: a.message,
+        time: a.timestamp ? a.timestamp.substring(11, 19) : '',
+        ai: '由 LogHawk Alerter 自动触发',
+        id: id
+      });
+    });
+    if (newAlerts.length > 0) {
+      newAlerts.reverse().forEach(function(a) {
+        state.alerts.unshift(a);
+      });
+      if (state.alerts.length > 50) state.alerts = state.alerts.slice(0, 50);
+      state.alertCount = state.alerts.length;
+      renderAlerts();
+      renderAlertStats();
+      updateAlertBadge();
+    }
   }).catch(function() {});
 }
 

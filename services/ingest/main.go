@@ -15,6 +15,8 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 // LogEntry represents a single log line.
@@ -148,6 +150,91 @@ func genRequestID() string {
 	return hex.EncodeToString(b)
 }
 
+// ===== RABBITMQ PUBLISH =====
+var (
+	rmqConn    *amqp.Connection
+	rmqCh      *amqp.Channel
+	rmqMu      sync.Mutex
+	rmqEnabled bool
+)
+
+func initRabbitMQ() {
+	host := os.Getenv("RABBITMQ_HOST")
+	if host == "" {
+		host = "rabbitmq.loghawk"
+	}
+	port := os.Getenv("RABBITMQ_AMQP_PORT")
+	if port == "" {
+		port = "5672"
+	}
+	user := os.Getenv("RABBITMQ_USER")
+	if user == "" {
+		user = "guest"
+	}
+	pass := os.Getenv("RABBITMQ_PASS")
+	if pass == "" {
+		pass = "guest"
+	}
+
+	url := fmt.Sprintf("amqp://%s:%s@%s:%s/", user, pass, host, port)
+
+	var err error
+	for i := 0; i < 10; i++ {
+		rmqConn, err = amqp.Dial(url)
+		if err == nil {
+			break
+		}
+		log.Printf("[INGEST] RabbitMQ connect attempt %d/10: %v", i+1, err)
+		time.Sleep(3 * time.Second)
+	}
+	if err != nil {
+		log.Printf("[INGEST] RabbitMQ unavailable, continuing without queue publish: %v", err)
+		return
+	}
+
+	rmqCh, err = rmqConn.Channel()
+	if err != nil {
+		log.Printf("[INGEST] RabbitMQ channel error: %v", err)
+		return
+	}
+
+	_, err = rmqCh.QueueDeclare("logs", true, false, false, false, nil)
+	if err != nil {
+		log.Printf("[INGEST] RabbitMQ queue declare error: %v", err)
+		return
+	}
+
+	rmqEnabled = true
+	log.Printf("[INGEST] RabbitMQ connected, publishing to queue 'logs'")
+
+	// Watch for connection close and reconnect
+	go func() {
+		closeErr := <-rmqConn.NotifyClose(make(chan *amqp.Error))
+		log.Printf("[INGEST] RabbitMQ connection lost: %v", closeErr)
+		rmqEnabled = false
+	}()
+}
+
+func publishToQueue(entries []LogEntry) {
+	if !rmqEnabled || rmqCh == nil {
+		return
+	}
+	rmqMu.Lock()
+	defer rmqMu.Unlock()
+	for _, e := range entries {
+		body, _ := json.Marshal(e)
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		err := rmqCh.PublishWithContext(ctx, "", "logs", false, false,
+			amqp.Publishing{ContentType: "application/json", Body: body})
+		cancel()
+		if err != nil {
+			log.Printf("[INGEST] RabbitMQ publish error: %v", err)
+			rmqEnabled = false
+			return
+		}
+	}
+}
+
 // POST /ingest
 func handleIngest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -166,6 +253,7 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logBuffer.Push(entries)
+	go publishToQueue(entries)
 	mu.Lock()
 	totalCount += len(entries)
 	mu.Unlock()
@@ -303,6 +391,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Connect to RabbitMQ (non-fatal, service continues without it)
+	go initRabbitMQ()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ingest", handleIngest)
 	mux.HandleFunc("/logs", handleGetLogs)
