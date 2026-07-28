@@ -117,6 +117,37 @@ kubectl -n loghawk rollout status deploy/ingest
 
 ---
 
+## 场景 6: 告警链路验证
+
+**演示目标：** 展示从日志注入到前端告警面板的全链路
+
+```bash
+# 1. 注入 CRIT 级别日志（触发"立即告警"规则）
+kubectl -n loghawk exec deploy/ingest -- wget -qO- --post-data='[{"timestamp":"2026-07-28T16:22:00Z","level":"CRIT","service":"payment","message":"CRITICAL: 数据库连接池耗尽"}]' --header='Content-Type: application/json' http://localhost:8001/ingest
+
+# 2. 等待 3 秒让 alerter 消费处理
+sleep 3
+
+# 3. 查看 alembicr 生成的告警
+kubectl -n loghawk exec deploy/alerter -- wget -qO- http://localhost:8004/alerts
+
+# 4. 刷新前端告警中心页面查看
+```
+
+**预期结果：**
+- 前端告警中心出现 "CRITICAL: 1 条 CRIT 级别日志" 告警卡片
+- 告警统计数字更新
+- 浏览器控制台无错误
+
+**告警规则一览：**
+| 规则 | 条件 | 窗口 | 冷却 |
+|------|------|------|------|
+| CRIT 立即告警 | CRIT ≥1 | 1 分钟 | 30s |
+| ERROR 突发 | ERROR >5 | 1 分钟 | 60s |
+| 服务持续报错 | 单服务 ERROR >10 | 2 分钟 | 120s |
+
+---
+
 ## 面试话术
 
 | 场景 | 面试能讲的 |

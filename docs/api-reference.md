@@ -249,6 +249,95 @@ data: {"type":"finding","content":"## 🟢 健康评估\n系统整体正常..."}
 
 ---
 
+## Alerter (端口 8004)
+
+Alerter 消费 RabbitMQ 日志队列，经规则引擎匹配后生成告警。
+
+### GET /alerts — 获取历史告警
+
+返回最近 100 条告警记录。
+
+**Response (200):**
+```json
+[
+  {
+    "id": "alert-1785255725-1",
+    "level": "crit",
+    "title": "CRITICAL: 1 条 CRIT 级别日志",
+    "message": "最近 1 分钟内出现 1 条 CRIT 日志: 数据库连接池耗尽",
+    "timestamp": "2026-07-28T16:23:44Z",
+    "service": "payment"
+  }
+]
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 唯一标识 |
+| `level` | string | crit / error / warn / info |
+| `title` | string | 告警标题 |
+| `message` | string | 详细描述 |
+| `timestamp` | string | UTC 时间 RFC3339 |
+| `service` | string | 触发服务 |
+| `node` | string | 触发节点 |
+
+---
+
+### POST /push — 手动推送告警
+
+**Request:**
+```json
+{
+  "id": "manual-001",
+  "level": "warn",
+  "title": "磁盘使用率超过 80%",
+  "message": "节点 k8s-worker1 磁盘使用率达 85%",
+  "service": "node-monitor",
+  "node": "k8s-worker1"
+}
+```
+
+**Response (202):**
+```json
+{"status":"broadcast","clients":1}
+```
+
+---
+
+### WS /ws — WebSocket 实时推送
+
+连接后自动收到历史告警，新告警实时推送。
+
+```
+ws://alerter:8004/ws
+```
+
+消息格式同 Alert JSON，每条一个 WebSocket Frame。
+
+---
+
+### GET /health — 健康检查
+
+**Response (200):**
+```json
+{"status":"ok","clients":1,"history":8}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `clients` | 当前 WebSocket 连接数 |
+| `history` | 内存中告警历史条数 |
+
+### 告警规则
+
+| 规则 | 条件 | 窗口 | 冷却 |
+|------|------|------|------|
+| CRIT 立即告警 | CRIT 级别日志 ≥1 | 1 分钟 | 30s |
+| ERROR 突发 | ERROR 数量 >5 | 1 分钟 | 60s |
+| 服务持续报错 | 单服务 ERROR >10 | 2 分钟 | 120s |
+
+---
+
 ## 通用说明
 
 ### SSE 流式响应

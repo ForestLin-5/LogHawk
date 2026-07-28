@@ -6,20 +6,31 @@
 LogHawk/
 ├── services/
 │   ├── ingest/              # Go — 日志摄入服务
-│   │   ├── main.go          # 单文件，~180 行
+│   │   ├── main.go          # ~430行，含 RingBuffer + RabbitMQ 发布
 │   │   ├── go.mod
-│   │   └── Dockerfile       # 多阶段构建，FROM scratch
+│   │   └── Dockerfile
 │   ├── ai-proxy/            # Go — AI 分析代理
-│   │   ├── main.go          # 单文件，~500 行
+│   │   ├── main.go          # ~580行，3 Agent + SSE + RAG
 │   │   ├── go.mod
-│   │   ├── Dockerfile       # 多阶段构建，FROM scratch
-│   │   ├── deploy.yaml      # K8s 部署文件
+│   │   ├── Dockerfile
 │   │   └── knowledge/       # RAG 知识库
+│   ├── alerter/             # Go — 告警引擎 ⭐新增
+│   │   ├── main.go          # ~420行，RabbitMQ 消费 + 规则引擎 + WebSocket
+│   │   ├── go.mod
+│   │   └── Dockerfile
+│   ├── chaos/               # Go — 故障注入
+│   │   ├── main.go          # K8s API 客户端 + 6 场景
+│   │   ├── go.mod
+│   │   └── Dockerfile
+│   ├── log-collector/       # Go — 节点日志采集 DaemonSet
+│   │   ├── main.go
+│   │   ├── go.mod
+│   │   └── Dockerfile
 │   └── frontend/            # 纯前端
-│       ├── index.html       # 单文件应用（~60KB）
-│       ├── nginx.conf
+│       ├── index.html       # 单文件应用（~3400行）
+│       ├── nginx.conf       # 3 路 API 反向代理
 │       ├── Dockerfile
-│       └── assets/          # Logo + 吉祥物图片
+│       └── assets/          # Logo + 吉祥物 + Chart.js 本地副本
 ├── k8s/                     # Kubernetes YAML（16 个文件）
 ├── scripts/                 # 部署脚本
 ├── docs/                    # 技术文档
@@ -34,16 +45,19 @@ LogHawk/
 
 ## 技术栈
 
-| 组件 | 语言 | 依赖 | 构建产物 |
-|------|------|------|---------|
-| Ingest | Go 1.21+ | 标准库 only | 单二进制 ~4MB |
-| AI Proxy | Go 1.21+ | 标准库 only | 单二进制 ~5MB |
-| Frontend | HTML/CSS/JS | Chart.js CDN | 静态文件 |
+| 组件 | 语言 | 依赖 | 端口 |
+|------|------|------|------|
+| Ingest | Go 1.21+ | rabbitmq/amqp091-go | 8001 |
+| AI Proxy | Go 1.21+ | 标准库 only | 8003 |
+| Alerter | Go 1.21+ | rabbitmq/amqp091-go, golang.org/x/net/websocket | 8004 |
+| Chaos | Go 1.21+ | client-go (K8s API) | 8005 |
+| Log Collector | Go 1.21+ | 标准库 only | — |
+| Frontend | HTML/CSS/JS | Chart.js（本地引用） | 80 |
 
 **设计原则：**
-- Go 服务零外部依赖，`go build` 即用
-- Docker 镜像 `FROM scratch`，< 6MB
-- 前端纯原生，无框架，兼容所有浏览器
+- Go 服务尽量零外部依赖，`go build` 即用
+- 前端纯原生，无框架，Chart.js 本地化无 CDN 依赖
+- Docker 镜像使用具体 tag，非 `latest`
 
 ---
 
@@ -138,20 +152,68 @@ make clean        # 清理编译产物
 
 ### Frontend (`services/frontend/index.html`)
 
-| 代码段 | 行 | 功能 |
-|--------|-----|------|
-| CSS Variables | L10-80 | 双主题 CSS 变量 |
-| `.theme-goofy` | L85-130 | 笨鹰主题覆盖 |
-| Log Terminal | L150-250 | 终端风格日志流 |
-| Alert Cards | L260-320 | 告警卡片 + AI 分析 |
-| Charts | L400-480 | Chart.js 4 图表 |
-| AI Panel | L500-600 | AI 对话面板 |
-| Theme Toggle | JS L20-50 | 5 次点击切换主题 |
-| Log Generation | JS L80-150 | 模拟日志生成 |
-| Patrol Agent | JS L200-300 | 巡检开关 + SSE 监听 |
-| Command Copy | JS L350-400 | bash:copy 渲染 + 复制 |
+| 代码段 | 功能 |
+|--------|------|
+| CSS Variables | 双主题 CSS 变量（light/dark/goofy） |
+| Log Terminal | 终端风格日志流，4 级过滤 |
+| Alert Cards | 告警卡片 + AI 分析建议 |
+| Charts | Chart.js 4 图表（摄入趋势/级别分布/延迟/异常） |
+| AI Panel | AI 对话面板 + SSE 流式 + 巡检开关 |
+| Chaos Grid | 6 场景故障演练面板 |
+| fetchRealStats() | 每 5s 轮询 `/api/ingest/stats` |
+| fetchLogs() | 每 3s 轮询 `/api/ingest/logs` ⭐新增 |
+| fetchAlerts() | 每 5s 轮询 `/api/alerter/alerts` ⭐新增 |
+
+### Alerter (`services/alerter/main.go`) ⭐新增
+
+| 代码段 | 功能 |
+|--------|------|
+| `consumeRabbitMQ()` | RabbitMQ 消费者 + 自动重连 |
+| `RuleEngine.feed()` | 滑动窗口规则匹配（2分钟窗口） |
+| `RuleEngine.shouldAlert()` | 冷却机制防告警风暴 |
+| `Hub.broadcast()` | WebSocket 多客户端广播 |
+| `handleGetAlerts()` | GET /alerts 历史告警 API |
+
+### Ingest (`services/ingest/main.go`)
+
+| 代码段 | 功能 |
+|--------|------|
+| `RingBuffer` | 线程安全环形缓冲区（10000条） |
+| `handleIngest()` | POST /ingest + RabbitMQ 异步发布 ⭐更新 |
+| `handleLogStream()` | SSE 实时日志流 |
+| `initRabbitMQ()` | RabbitMQ 连接（10次重试） ⭐新增 |
+| `publishToQueue()` | 异步推送到 "logs" 队列 ⭐新增 |
 
 ---
+
+## 开发日志
+
+### 2026-07-28 — v1.0 功能完善
+
+1. **前端假数据清理** — 移除硬编码模拟日志、告警、统计数据，改为从后端 API 轮询
+2. **Chart.js 本地化** — 下载到 `assets/chart.umd.min.js`，消除 CDN 依赖（国内网络兼容性）
+3. **日志实时展示** — 新增 `fetchLogs()`，每 3s 轮询 `/api/ingest/logs`
+4. **nginx 多路代理** — 新增 `/api/ingest/`（→ingest:8001）、`/api/alerter/`（→alerter:8004）
+5. **告警链路打通** — ingest 异步发布到 RabbitMQ `logs` 队列，alerter 消费 + 规则引擎
+6. **3 条告警规则** — CRIT 立即告警 / ERROR 突发（>5/min）/ 单服务持续报错（>10/2min）
+7. **前端告警轮询** — 新增 `fetchAlerts()`，每 5s 轮询 `/api/alerter/alerts`
+8. **各模块 try-catch 防护** — 单模块崩溃不影响整体页面运行
+9. **默认不暂停** — `isPaused: false`，打开页面即展示日志流
+10. **RABBITMQ_PORT 冲突修复** — 改为 `RABBITMQ_AMQP_PORT`，避免 K8s Service 自动注入的 `tcp://` 值污染
+
+### 踩坑记录
+
+| 问题 | 根因 | 解决 |
+|------|------|------|
+| Chart.js 加载失败页面全崩 | CDN 国内被墙 | 本地引用 `assets/chart.umd.min.js` |
+| nginx `/api/ingest/` 不代理 | Docker 层缓存 `COPY nginx.conf` | `--no-cache` 构建 |
+| 终端粘贴反引号污染 nginx.conf | SSH 终端自动转义 URL | scp 二进制传输 |
+| 前端日志不显示 | `isPaused: true` 默认暂停 | 改为 `false` |
+| RabbitMQ `guest` 登录拒绝 | 3.3+ 禁止 guest 远程登录 | `rabbitmqctl` 创建 admin 用户 |
+| `RABBITMQ_PORT` 被 K8s 污染 | K8s 自动注入 `tcp://IP:PORT` | 改名为 `RABBITMQ_AMQP_PORT` |
+| Secret 密码占位符 | `<CHANGE_ME_*>` 含特殊字符 | 重建 Secret + rabbitmqctl 改密 |
+| 镜像 tag 不匹配 | Docker build 用 short name | retag 为完整 registry 路径 |
+| `defer cancel()` in for loop | context 泄漏 | 改为显式 `cancel()` |
 
 ## 修改指南
 
