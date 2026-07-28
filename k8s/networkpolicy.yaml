@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loghawk-netpol
+  namespace: loghawk
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from within namespace
+    - from:
+        - podSelector: {}
+    # Allow ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+    # Allow monitoring (Prometheus scrape)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - port: 9090
+  egress:
+    # DNS resolution (kube-dns / CoreDNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Intra-namespace traffic
+    - to:
+        - podSelector: {}
+    # Outbound to external AI providers (HTTPS). Restrict to 443 to limit
+    # exfiltration surface while allowing OpenAI/Ollama-compatible APIs.
+    - ports:
+        - protocol: TCP
+          port: 443
+    # Allow egress to monitoring namespace (e.g. remote-write)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring

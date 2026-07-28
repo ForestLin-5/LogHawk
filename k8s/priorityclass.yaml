@@ -1,0 +1,103 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: loghawk-high
+value: 1000000
+globalDefault: false
+description: "LogHawk core services - evicted last under memory pressure"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: loghawk-low
+value: 100
+globalDefault: false
+description: "LogHawk auxiliary services - can be evicted first"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: alerter-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: alerter
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-proxy-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-proxy
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chaos-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: chaos
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ingest-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ingest
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: postgres
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: redis
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rabbitmq-pdb
+  namespace: loghawk
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: rabbitmq

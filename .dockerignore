@@ -1,0 +1,27 @@
+﻿# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# Vagrant
+.vagrant/
+
+# Temp
+tmp/
+temp/

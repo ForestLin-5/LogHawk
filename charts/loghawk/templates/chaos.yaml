@@ -1,0 +1,74 @@
+﻿{{- if .Values.chaos.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-sa
+  namespace: {{ $.Values.global.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chaos-role
+  namespace: {{ $.Values.global.namespace }}
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "list", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "endpoints"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chaos-rb
+  namespace: {{ $.Values.global.namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: chaos-sa
+    namespace: {{ $.Values.global.namespace }}
+roleRef:
+  kind: Role
+  name: chaos-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chaos
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  selector:
+    app: chaos
+  ports:
+    - port: 8005
+      targetPort: 8005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos
+  namespace: {{ $.Values.global.namespace }}
+spec:
+  replicas: {{ .Values.chaos.replicas }}
+  selector:
+    matchLabels:
+      app: chaos
+  template:
+    metadata:
+      labels:
+        app: chaos
+    spec:
+      serviceAccountName: chaos-sa
+      containers:
+        - name: chaos
+          image: {{ .Values.chaos.image }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 8005
+          resources:
+            {{- toYaml .Values.chaos.resources | nindent 12 }}
+{{- end }}

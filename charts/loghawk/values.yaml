@@ -1,0 +1,112 @@
+# LogHawk Helm Chart Ĭ������
+
+global:
+  namespace: loghawk
+  imagePullPolicy: IfNotPresent
+  registry: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen
+
+ingest:
+  enabled: true
+  replicas: 2
+  image: "{{ .Values.global.registry }}/ingest:v1.0.0"
+  port: 8001
+  resources:
+    requests:
+      memory: "16Mi"
+      cpu: "10m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"
+
+aiProxy:
+  enabled: true
+  replicas: 1
+  image: "{{ .Values.global.registry }}/ai-proxy:v1.0.0"
+  port: 8003
+  env:
+    openaiApiKey: ""
+    openaiBaseUrl: "https://api.openai.com/v1"
+    openaiModel: "gpt-4o-mini"
+    patrolIntervalSec: "30"
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "20m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+frontend:
+  enabled: true
+  replicas: 1
+  image: "{{ .Values.global.registry }}/frontend:v1.0.0"
+  nodePort: 30080
+  resources:
+    requests:
+      memory: "16Mi"
+      cpu: "10m"
+    limits:
+      memory: "32Mi"
+      cpu: "50m"
+
+alerter:
+  enabled: true
+  replicas: 1
+  image: "{{ .Values.global.registry }}/alerter:v1.0.0"
+  resources:
+    requests:
+      memory: "16Mi"
+      cpu: "10m"
+    limits:
+      memory: "32Mi"
+      cpu: "50m"
+
+logCollector:
+  enabled: true
+  image: "{{ .Values.global.registry }}/log-collector:v1.0.0"
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "25m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"
+
+chaos:
+  enabled: true
+  replicas: 1
+  image: "{{ .Values.global.registry }}/chaos:v1.0.0"
+  apiToken: "<CHANGE_ME_CHAOS_API_TOKEN>"
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "25m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"
+
+postgres:
+  enabled: true
+  storage: 2Gi
+  user: loghawk
+  password: "<CHANGE_ME_PASSWORD>"
+  database: loghawk
+
+rabbitmq:
+  enabled: true
+  storage: 1Gi
+  user: loghawk
+  password: "<CHANGE_ME_PASSWORD>"
+
+redis:
+  enabled: true
+  storage: 1Gi
+
+prometheus:
+  enabled: true
+  storage: 5Gi
+
+grafana:
+  enabled: true
+  nodePort: 30300
+  adminPassword: "<CHANGE_ME_GRAFANA_PASSWORD>"

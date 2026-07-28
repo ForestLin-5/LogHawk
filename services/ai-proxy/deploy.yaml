@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loghawk
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-proxy-secret
+  namespace: loghawk
+type: Opaque
+stringData:
+  # Replace with your real OpenAI / Ollama-compatible key before deployment.
+  OPENAI_API_KEY: "<CHANGE_ME_OPENAI_API_KEY>"
+  OPENAI_BASE_URL: "https://api.openai.com/v1"
+  OPENAI_MODEL: "gpt-4o-mini"
+  PATROL_INTERVAL_SEC: "30"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-proxy
+  namespace: loghawk
+  labels:
+    app: ai-proxy
+    component: ai-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-proxy
+  template:
+    metadata:
+      labels:
+        app: ai-proxy
+        component: ai-agent
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: ai-proxy
+                topologyKey: kubernetes.io/hostname
+      imagePullSecrets:
+        - name: aliyun-registry
+      containers:
+      - name: ai-proxy
+        image: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen/ai-proxy:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8003
+          name: http
+        envFrom:
+        - secretRef:
+            name: ai-proxy-secret
+        env:
+        - name: AI_PROXY_PORT
+          value: "8003"
+        - name: KNOWLEDGE_DIR
+          value: "/knowledge"
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "20m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8003
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        volumeMounts:
+        - name: knowledge
+          mountPath: /knowledge
+      volumes:
+      - name: knowledge
+        configMap:
+          name: ai-knowledge
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-knowledge
+  namespace: loghawk
+data:
+  common-issues.md: |
+    # ������ά�����Ų��ֲ�
+    
+    ## ���ݿ����ӳغľ�
+    - ֢״: Connection pool exhausted / too many connections
+    - �޸�: SET GLOBAL max_connections = 400; �޸� my.cnf
+    
+    ## ���̿ռ䲻��
+    - ֢״: no space left on device / disk usage > 85%
+    - �޸�: crictl rmi --prune; journalctl --vacuum-size=500M
+    
+    ## Pod CrashLoopBackOff
+    - �Ų�: kubectl logs <pod> --previous; kubectl describe pod <pod>
+    - ����ԭ��: OOMKilled, ImagePullBackOff, ���ô���, �˿ڳ�ͻ
+    
+    ## ֤�鼴������
+    - ���: openssl x509 -in cert.pem -noout -enddate
+    - K8s: kubectl get certificaterequests -A
+  k8s-troubleshooting.md: |
+    # K8s �����ٲ�
+    
+    ## �ڵ� NotReady
+    - kubectl describe node <node> | grep -A5 Conditions
+    - ���: systemctl status kubelet, df -h, free -h
+    
+    ## Service �޷�����
+    - kubectl get endpoints <svc>
+    - Endpoints Ϊ��: ��� Pod selector / readinessProbe
+    
+    ## etcd ����
+    - ETCDCTL_API=3 etcdctl endpoint health
+    - etcd ��Ƭ����: ETCDCTL_API=3 etcdctl defrag
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-proxy
+  namespace: loghawk
+spec:
+  selector:
+    app: ai-proxy
+  ports:
+  - port: 8003
+    targetPort: 8003
+    name: http
+  type: ClusterIP

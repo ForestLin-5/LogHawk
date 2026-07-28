@@ -1,0 +1,31 @@
+{
+  "title": "LogHawk — 实时日志监控",
+  "uid": "loghawk",
+  "panels": [
+    {
+      "title": "日志摄入速率 (条/秒)",
+      "type": "graph",
+      "targets": [{"expr": "rate(loghawk_ingest_total[1m])"}]
+    },
+    {
+      "title": "异常检出率",
+      "type": "graph",
+      "targets": [{"expr": "rate(loghawk_anomaly_total[1m])"}]
+    },
+    {
+      "title": "RabbitMQ 队列深度",
+      "type": "graph",
+      "targets": [{"expr": "rabbitmq_queue_messages{queue='log-stream'}"}]
+    },
+    {
+      "title": "Pod 健康状态",
+      "type": "stat",
+      "targets": [{"expr": "count(up{namespace='loghawk'} == 1)"}]
+    },
+    {
+      "title": "WebSocket 连接数",
+      "type": "gauge",
+      "targets": [{"expr": "loghawk_ws_connections"}]
+    }
+  ]
+}

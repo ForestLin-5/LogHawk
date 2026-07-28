@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-sa
+  namespace: loghawk
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chaos-role
+  namespace: loghawk
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - deployments/scale
+  verbs:
+  - get
+  - list
+  - update
+  - patch
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  - services
+  - configmaps
+  - endpoints
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs:
+  - get
+  - list
+  - create
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chaos-rb
+  namespace: loghawk
+subjects:
+- kind: ServiceAccount
+  name: chaos-sa
+  namespace: loghawk
+roleRef:
+  kind: Role
+  name: chaos-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chaos
+  namespace: loghawk
+spec:
+  selector:
+    app: chaos
+  ports:
+  - port: 8005
+    targetPort: 8005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos
+  namespace: loghawk
+  labels:
+    app: chaos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chaos
+  template:
+    metadata:
+      labels:
+        app: chaos
+    spec:
+      serviceAccountName: chaos-sa
+      imagePullSecrets:
+      - name: aliyun-registry
+      containers:
+      - name: chaos
+        image: loghawk/chaos:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8005
+        env:
+        - name: CHAOS_NAMESPACE
+          value: loghawk
+        - name: CHAOS_PORT
+          value: '8005'
+        - name: CHAOS_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: CHAOS_API_TOKEN
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 25m
+          limits:
+            memory: 64Mi
+            cpu: 100m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 5

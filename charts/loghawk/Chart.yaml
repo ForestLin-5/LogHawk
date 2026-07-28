@@ -1,0 +1,17 @@
+﻿apiVersion: v2
+name: loghawk
+description: LogHawk — 实时日志智能分析平台
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - logging
+  - monitoring
+  - ai
+  - kubernetes
+  - devops
+home: https://github.com/linwumu/LogHawk
+sources:
+  - https://github.com/linwumu/LogHawk
+maintainers:
+  - name: linwumu

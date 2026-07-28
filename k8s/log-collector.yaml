@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: log-collector
+  namespace: loghawk
+  labels:
+    app: log-collector
+    component: log-aggregation
+spec:
+  selector:
+    matchLabels:
+      app: log-collector
+  template:
+    metadata:
+      labels:
+        app: log-collector
+        component: log-aggregation
+      annotations:
+        prometheus.io/scrape: 'true'
+    spec:
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+      - name: aliyun-registry
+      # DaemonSet that reads node-level container logs must run as root on most
+      # Kubernetes distributions; file permissions under /var/log/containers are
+      # typically root-owned symlinks. Fine-grained PSP/Seccomp can be applied
+      # separately if required.
+      securityContext:
+        runAsUser: 0
+      containers:
+      - name: collector
+        image: loghawk/log-collector:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: INGEST_URL
+          value: http://ingest.loghawk:8001/ingest
+        - name: LOG_DIR
+          value: /var/log/containers
+        - name: OFFSETS_FILE
+          value: /var/lib/loghawk/offsets.json
+        - name: BATCH_SIZE
+          value: "100"
+        - name: FLUSH_INTERVAL
+          value: "5s"
+        - name: MAX_RETRIES
+          value: "3"
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 25m
+          limits:
+            memory: 128Mi
+            cpu: 200m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
+        - name: offsets
+          mountPath: /var/lib/loghawk
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+          type: Directory
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+          type: DirectoryOrCreate
+      - name: varlogpods
+        hostPath:
+          path: /var/log/pods
+          type: DirectoryOrCreate
+      - name: offsets
+        hostPath:
+          path: /var/lib/loghawk
+          type: DirectoryOrCreate
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      - effect: NoExecute
+        operator: Exists

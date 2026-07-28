@@ -1,0 +1,16 @@
+﻿apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loghawk-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  LOG_LEVEL: "info"
+  INGEST_PORT: "8001"
+  RABBITMQ_HOST: "rabbitmq.{{ .Values.global.namespace }}"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_QUEUE: "log-stream"
+  POSTGRES_HOST: "postgres.{{ .Values.global.namespace }}"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "{{ .Values.postgres.database }}"
+  REDIS_HOST: "redis.{{ .Values.global.namespace }}"
+  REDIS_PORT: "6379"
