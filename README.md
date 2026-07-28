@@ -27,48 +27,42 @@
 
 ```mermaid
 graph TB
-    subgraph "外部"
-        U[用户/应用] -->|推送日志| ING[Ingest Service<br/>Go · 2副本]
-        B[浏览器] -->|WebSocket| ALERT[Alerter<br/>WebSocket推送]
-        B -->|HTTP| FE[Frontend<br/>Nginx静态托管]
-        B -->|SSE| AI[AI Proxy<br/>Go · 零依赖]
+    subgraph "数据采集"
+        LC[log-collector<br/>DaemonSet ×3] -->|POST /ingest| ING[Ingest Service<br/>Go · 2副本]
     end
     
     subgraph "K8s 集群"
-        ING -->|写入| MQ[RabbitMQ<br/>消息削峰]
-        MQ -->|消费| ANA[Analyzer<br/>规则引擎]
-        MQ -->|消费| AIA[AI Analyzer<br/>LLM分析]
-        ANA -->|写入| PG[(PostgreSQL<br/>日志归档)]
-        AIA -->|发布| RED[Redis Pub/Sub]
-        RED -->|订阅| ALERT
-        
-        PROM[Prometheus] -->|抓取| ING
-        PROM -->|抓取| ANA
-        GRAF[Grafana] -->|查询| PROM
+        ING -->|RingBuffer| LOGS[GET /logs<br/>前端轮询展示]
+        ING -->|异步发布| MQ[RabbitMQ<br/>logs 队列]
+        MQ -->|消费| ALERT[Alerter<br/>规则引擎 · 3条规则]
+        ALERT -->|GET /alerts| B
+        CHAOS[Chaos Service<br/>6场景 · Bearer认证]
     end
     
-    AI -->|API Key 隔离| LLM[OpenAI / Ollama<br/>通义千问 / 本地模型]
+    subgraph "前端"
+        B[浏览器<br/>:30080] -->|HTTP轮询| LOGS
+        B -->|SSE| AI[AI Proxy<br/>Go · LLM对话]
+        B -->|HTTP轮询| ALERT
+    end
+    
+    AI -->|API Key| LLM[OpenAI / DeepSeek]
 ```
-
----
 
 ## 🧩 服务清单
 
-| 服务 | 语言 | 职责 | 依赖 | 端口 |
-|------|------|------|------|------|
-| **Ingest** | Go | 接收日志 → 内存环形缓冲 → SSE 实时推送 | 标准库 | 8001 |
-| **AI Proxy** | Go | 🔍巡检 + 💬多轮诊断 + 📚RAG 知识库 | 标准库 | 8003 |
-| **Frontend** | HTML/CSS/JS | 双主题监控界面 + AI 对话 + 故障演练面板 | Chart.js CDN | 80 |
-| **Chaos** | Go | 故障注入引擎，6 个 SRE 演练场景，含提示系统 | client-go | 8005 |
-| **Alerter** | Go | WebSocket 实时告警广播，Hub 客户端管理 | websocket | 8004 |
-| **Log Collector** | Go | DaemonSet 节点级日志采集，tail 宿主机日志 | 标准库 | — |
-| **PostgreSQL** | — | 日志归档 + 异常历史 | — | 5432 |
-| **RabbitMQ** | — | 削峰填谷，服务解耦 | — | 5672 |
-| **Redis** | — | Pub/Sub 实时推送 | — | 6379 |
-| **Prometheus** | — | 自定义指标采集 | — | 9090 |
-| **Grafana** | — | 实时仪表盘 | — | 3000 |
-
-> 💡 **Ingest 和 AI Proxy 均零外部依赖**，`go build` 单文件部署，Docker 镜像 < 6MB。
+| 服务 | 语言 | 职责 | 依赖 | 端口 | 状态 |
+|------|------|------|------|------|------|
+| **Ingest** | Go | 日志接收 → RingBuffer + RabbitMQ 发布 | amqp091-go | 8001 | ✅ |
+| **Alerter** | Go | RabbitMQ 消费 → 规则引擎 → 告警推送 | amqp091-go, websocket | 8004 | ✅ |
+| **AI Proxy** | Go | 🔍巡检 + 💬多轮诊断 + 📚RAG | 标准库 | 8003 | ✅ |
+| **Frontend** | HTML/CSS/JS | 实时日志 + 告警中心 + 仪表盘 + 故障演练 | Chart.js 本地 | 80 | ✅ |
+| **Chaos** | Go | 6 个故障场景注入引擎，Bearer Token 认证 | client-go | 8005 | ✅ |
+| **Log Collector** | Go | DaemonSet 节点级日志采集 | 标准库 | — | ✅ |
+| **PostgreSQL** | — | 日志归档（预留） | — | 5432 | 🔧 |
+| **RabbitMQ** | — | 消息削峰，Ingest→Alerter 解耦 | — | 5672 | ✅ |
+| **Redis** | — | Pub/Sub 缓存（预留） | — | 6379 | 🔧 |
+| **Prometheus** | — | 自定义指标采集 | — | 9090 | ✅ |
+| **Grafana** | — | 实时仪表盘 | — | 3000 | ✅ |
 
 ---
 

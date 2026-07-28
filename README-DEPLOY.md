@@ -115,11 +115,16 @@ AI Proxy 不通过 Ingress 直接暴露。前端在 K8s 内网中通过相对路
 
 | 现象 | 排查命令 |
 |------|----------|
-| Pod 拉镜像失败 | kubectl -n loghawk describe pod <pod-name> |
-| Pod 权限不足 | kubectl -n loghawk logs <pod-name> |
+| Pod 拉镜像失败 | `kubectl -n loghawk describe pod <pod-name>` |
+| Pod 权限不足 | `kubectl -n loghawk logs <pod-name>` |
 | 前端 404 | 确认 Ingress 域名解析，或改用 NodePort |
 | AI 功能不可用 | 检查 ai-proxy-secret 是否存在 |
 | Chaos 401 | 确认 CHAOS_API_TOKEN 已配置 |
+| 前端日志不显示 | 点击日志页底部 `▶ 继续` 按钮（默认暂停需手动开启） |
+| 前端统计卡无数据 | 确认 `/api/ingest/stats` 可访问，检查 nginx proxy_pass 是否被反引号污染 |
+| Alert 告警不触发 | 检查 RabbitMQ 密码是否正确 + `rabbitmqctl add_user` 创建用户（guest 禁止远程登录） |
+| `RABBITMQ_PORT=tcp://...` 污染 | K8s Service 自动注入，代码使用 `RABBITMQ_AMQP_PORT` 避免冲突 |
+| Docker 构建层缓存 | 使用 `--no-cache` 强制重建 |
 
 ## 回滚
 
