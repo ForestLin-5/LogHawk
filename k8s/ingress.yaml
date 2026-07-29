@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loghawk-ingress
+  namespace: loghawk
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: loghawk.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /api/ingest
+            pathType: Prefix
+            backend:
+              service:
+                name: ingest
+                port:
+                  number: 8001
+          # NOTE: AI Proxy is reached via frontend Nginx reverse proxy at
+          # /api/* so it does not need a separate Ingress path. This keeps
+          # the external surface minimal and avoids path rewrite ambiguity.

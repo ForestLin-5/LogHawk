@@ -1,0 +1,3580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#faf9f6">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="icon" type="image/png" href="assets/logo-pro.png">
+<title>LogHawk — 实时日志智能分析平台</title>
+<script src="assets/chart.umd.min.js"></script>
+<style>
+/* ============================================================
+   LogHawk — Enterprise Operations Console
+   Design Direction: Industrial / Glassmorphism / Dark-first
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Typography */
+  --font-body: 'Sora', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+
+  /* Colors — Cream white + Dusty blue + Champagne gold + Soft pink */
+  --bg-deep: #FFFBF5;
+  --bg-elevated: #FFFFFF;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: #ffffff;
+  --bg-subtle: #F7F1E8;
+  --bg-input: #FFFFFF;
+
+  --border: rgba(180, 170, 155, 0.2);
+  --border-strong: rgba(180, 170, 155, 0.35);
+  --border-glow: rgba(212, 196, 168, 0.5);
+
+  --text-primary: #2C2C2C;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9E9E9E;
+  --text-muted: #C4C4C4;
+
+  --accent: #5B7B8C;
+  --accent-2: #7A9AA8;
+  --accent-soft: rgba(91, 123, 140, 0.1);
+  --accent-glow: rgba(91, 123, 140, 0.18);
+
+  --pink: #E8A8A8;
+  --pink-soft: rgba(232, 168, 168, 0.15);
+
+  --gold: #C9B896;
+  --gold-light: #D4C4A8;
+  --gold-soft: rgba(201, 184, 150, 0.12);
+
+  --success: #6B9E7D;
+  --success-soft: rgba(107, 158, 125, 0.12);
+  --warning: #D4A574;
+  --warning-soft: rgba(212, 165, 116, 0.12);
+  --danger: #C97B7B;
+  --danger-soft: rgba(201, 123, 123, 0.1);
+  --info: #5B7B8C;
+  --info-soft: rgba(91, 123, 140, 0.1);
+
+  /* Effects */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 2px 8px rgba(120, 110, 90, 0.06);
+  --shadow-md: 0 6px 24px rgba(120, 110, 90, 0.08);
+  --shadow-lg: 0 20px 60px rgba(120, 110, 90, 0.12);
+  --shadow-glow: 0 0 40px rgba(201, 184, 150, 0.15);
+
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --sidebar-width: 260px;
+  --header-height: 64px;
+}
+
+/* Dark theme overrides (secondary) */
+body.theme-dark {
+  --bg-deep: #1E1E24;
+  --bg-elevated: #2A2A33;
+  --bg-card: rgba(42, 42, 51, 0.7);
+  --bg-card-hover: rgba(42, 42, 51, 0.95);
+  --bg-subtle: rgba(60, 60, 72, 0.5);
+  --bg-input: rgba(30, 30, 36, 0.9);
+
+  --border: rgba(201, 184, 150, 0.12);
+  --border-strong: rgba(201, 184, 150, 0.25);
+
+  --text-primary: #EDE8DF;
+  --text-secondary: #A8A295;
+  --text-tertiary: #7A7568;
+  --text-muted: #555046;
+
+  --accent: #8BB0BF;
+  --accent-2: #A8C8D6;
+  --accent-soft: rgba(139, 176, 191, 0.12);
+  --accent-glow: rgba(139, 176, 191, 0.2);
+
+  --pink: #E8A8A8;
+  --pink-soft: rgba(232, 168, 168, 0.1);
+
+  --gold: #D4C4A8;
+  --gold-light: #E0D2B8;
+  --gold-soft: rgba(212, 196, 168, 0.12);
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-md: 0 6px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+/* Goofy theme — kept but refined */
+body.theme-goofy {
+  --font-body: 'ZCOOL KuaiLe', cursive;
+  --font-mono: 'ZCOOL KuaiLe', cursive;
+  --bg-deep: #fff9f0;
+  --bg-elevated: #fffef9;
+  --bg-card: #ffffff;
+  --accent: #ff6b9d;
+  --accent-soft: #fff0f5;
+  --success: #66bb6a;
+  --warning: #ffa726;
+  --danger: #ff5252;
+  --info: #7c4dff;
+  --border: #333;
+  --text-primary: #4a3728;
+  --text-secondary: #6b5b4f;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow-md: 6px 6px 0 #ffcdd2;
+  --shadow-lg: 10px 10px 0 #ffcdd2;
+  --transition: 300ms cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--transition-slow), color var(--transition-slow);
+  overflow-x: hidden;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60vh;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 20% 0%, rgba(91, 123, 140, 0.06), transparent),
+    radial-gradient(ellipse 50% 60% at 100% 0%, rgba(201, 184, 150, 0.08), transparent);
+}
+body.theme-dark::before {
+  background:
+    radial-gradient(ellipse 60% 80% at 20% 0%, rgba(139, 176, 191, 0.06), transparent),
+    radial-gradient(ellipse 50% 60% at 100% 0%, rgba(212, 196, 168, 0.06), transparent);
+}
+body.theme-goofy::before { display: none; }
+
+/* ===== APP LAYOUT ===== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition), background var(--transition-slow);
+}
+
+.sidebar-brand {
+  padding: 20px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.sidebar-brand:active .brand-icon { transform: scale(0.92); }
+.brand-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  background: #fff url('LogHawk%20鹰隼logo设计需求（0）.png') center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 2px solid #fff;
+}
+.brand-text {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.brand-text span { -webkit-text-fill-color: var(--accent); }
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.nav-section {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 16px 12px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+  position: relative;
+  text-decoration: none;
+}
+.nav-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.nav-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--border-glow);
+  box-shadow: 0 2px 8px var(--accent-glow);
+  font-weight: 600;
+}
+.nav-item .nav-icon {
+  font-size: 18px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.nav-item .nav-badge {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.sidebar-footer {
+  padding: 14px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.status-dot.offline {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-sub {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.theme-toggle-row {
+  display: flex;
+  gap: 6px;
+  padding: 0 6px;
+}
+.theme-toggle-btn {
+  flex: 1;
+  padding: 7px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.theme-toggle-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: var(--header-height);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition-slow);
+}
+body.theme-dark .topbar {
+  background: rgba(42, 42, 51, 0.85);
+}
+body.theme-goofy .topbar {
+  background: var(--bg-elevated);
+  backdrop-filter: none;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.page-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.page-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box {
+  position: relative;
+  width: 280px;
+}
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  outline: none;
+  transition: all var(--transition);
+}
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+
+.topbar-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition);
+  position: relative;
+}
+.topbar-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.topbar-btn .badge-dot {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 7px; height: 7px;
+  background: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--bg-elevated);
+}
+
+/* ===== PAGE CONTENT ===== */
+.page-content {
+  padding: 24px 28px 40px;
+  flex: 1;
+}
+
+.tab-panel {
+  display: none;
+  animation: panelIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tab-panel.active { display: block; }
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== STATS ROW ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.stat-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-card.accent-1::before { background: linear-gradient(90deg, #5B7B8C, #7A9AA8); }
+.stat-card.accent-2::before { background: linear-gradient(90deg, #6B9E7D, #8FBDA0); }
+.stat-card.accent-3::before { background: linear-gradient(90deg, #D4A574, #E8C49A); }
+.stat-card.accent-4::before { background: linear-gradient(90deg, #C97B7B, #E09A9A); }
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.stat-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.stat-icon.blue { background: var(--accent-soft); color: var(--accent); }
+.stat-icon.green { background: var(--success-soft); color: var(--success); }
+.stat-icon.amber { background: var(--warning-soft); color: var(--warning); }
+.stat-icon.red { background: var(--danger-soft); color: var(--danger); }
+
+.stat-value {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.stat-trend.up { color: var(--success); }
+.stat-trend.down { color: var(--danger); }
+.stat-trend .trend-arrow { font-size: 11px; }
+.stat-trend .trend-sub {
+  color: var(--text-tertiary);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+/* ===== SECTION CARD ===== */
+.section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+}
+.card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.card-body { padding: 0; }
+
+/* ===== LOG VIEWER ===== */
+.log-viewer {
+  background: #2B2A28;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #3A3936, #2F2E2C);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.log-toolbar-left, .log-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.window-dots { display: flex; gap: 6px; }
+.win-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.win-dot:hover { opacity: 0.8; }
+.win-dot.red { background: #ff5f57; }
+.win-dot.yellow { background: #febc2e; }
+.win-dot.green { background: #28c840; }
+.log-title {
+  color: rgba(212, 175, 55, 0.6);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.filter-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.filter-pill {
+  padding: 4px 10px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(212, 175, 55, 0.5);
+  transition: all var(--transition);
+  font-family: var(--font-mono);
+}
+.filter-pill:hover { color: #f0ebe0; border-color: rgba(212, 175, 55, 0.5); }
+.filter-pill.active {
+  background: rgba(212, 175, 55, 0.15);
+  color: #e6c44a;
+  border-color: rgba(212, 175, 55, 0.4);
+}
+.filter-pill.info.active { background: #8b6914; border-color: #8b6914; color: #fff; }
+.filter-pill.warn.active { background: var(--warning); border-color: var(--warning); color: #fff; }
+.filter-pill.error.active { background: var(--danger); border-color: var(--danger); color: #fff; }
+.filter-pill.crit.active { background: #7f1d1d; border-color: #b91c1c; color: #fff; }
+
+.log-btn {
+  padding: 5px 12px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(50, 45, 38, 0.5);
+  color: rgba(240, 235, 224, 0.75);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.log-btn:hover {
+  background: rgba(70, 60, 45, 0.6);
+  color: #fff;
+  border-color: rgba(212, 175, 55, 0.4);
+}
+.log-btn.danger { border-color: var(--danger); color: var(--danger); }
+.log-btn.danger:hover { background: var(--danger); color: #fff; }
+.log-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.log-btn.primary:hover {
+  background: #b8901f;
+  border-color: #b8901f;
+}
+
+.log-stream {
+  height: 420px;
+  overflow-y: auto;
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  background: #2B2A28;
+  position: relative;
+}
+.log-stream::-webkit-scrollbar { width: 8px; }
+.log-stream::-webkit-scrollbar-track { background: transparent; }
+.log-stream::-webkit-scrollbar-thumb {
+  background: rgba(201, 184, 150, 0.25);
+  border-radius: 4px;
+}
+.log-stream::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 184, 150, 0.4);
+}
+
+.log-line {
+  display: flex;
+  gap: 12px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  animation: logIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.log-line:hover {
+  background: rgba(212, 175, 55, 0.06);
+}
+@keyframes logIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.log-ts {
+  color: #64748b;
+  min-width: 140px;
+  flex-shrink: 0;
+  font-size: 11.5px;
+}
+.log-svc {
+  color: #94a3b8;
+  min-width: 100px;
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.log-lvl {
+  min-width: 58px;
+  font-weight: 700;
+  font-size: 11px;
+  text-align: center;
+  flex-shrink: 0;
+  border-radius: 3px;
+  height: fit-content;
+  padding: 2px 4px;
+  line-height: 1;
+  margin-top: 4px;
+}
+.log-lvl.INFO { color: #A8C8D6; background: rgba(139, 176, 191, 0.15); }
+.log-lvl.WARN { color: #E8C49A; background: rgba(212, 165, 116, 0.18); }
+.log-lvl.ERROR { color: #E09A9A; background: rgba(201, 123, 123, 0.15); }
+.log-lvl.CRIT {
+  color: #fff;
+  background: #dc2626;
+  animation: critFlash 1.5s ease-in-out infinite;
+}
+@keyframes critFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.log-msg { color: #E0DCD2; flex: 1; }
+
+.log-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  background: linear-gradient(0deg, #3A3936, #2F2E2C);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.log-count {
+  font-size: 11px;
+  color: rgba(201, 184, 150, 0.6);
+  font-family: var(--font-mono);
+}
+
+/* ===== CHARTS GRID ===== */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px 22px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition);
+}
+.chart-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
+}
+.chart-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.chart-value {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.chart-card canvas {
+  max-height: 200px;
+}
+
+/* ===== ALERTS ===== */
+.alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 14px;
+}
+.alert-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.alert-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.alert-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--warning);
+}
+.alert-card.warn::before { background: var(--warning); }
+.alert-card.error::before { background: var(--danger); }
+.alert-card.crit::before { background: #7f1d1d; }
+.alert-card.info::before { background: var(--info); }
+
+.alert-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+.alert-title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.1px;
+}
+.alert-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+.alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.alert-badge.crit { background: var(--danger-soft); color: var(--danger); }
+.alert-badge.error { background: var(--danger-soft); color: var(--danger); }
+.alert-badge.warn { background: var(--warning-soft); color: var(--warning); }
+.alert-badge.info { background: var(--info-soft); color: var(--info); }
+.alert-badge .alert-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.alert-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.alert-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.alert-ai-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--accent);
+  line-height: 1.5;
+}
+.alert-ai-icon { flex-shrink: 0; font-size: 14px; }
+.alert-action {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.alert-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ===== CHAOS ===== */
+.chaos-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.chaos-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  text-align: center;
+}
+.chaos-stat .num {
+  font-size: 32px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.chaos-stat .label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 4px;
+}
+
+.chaos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+}
+.chaos-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+.chaos-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.chaos-card.active {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft), var(--shadow-md);
+  animation: chaosPulse 2s ease-in-out infinite;
+}
+@keyframes chaosPulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--danger-soft), var(--shadow-md); }
+  50% { box-shadow: 0 0 0 6px var(--danger-soft), var(--shadow-md); }
+}
+.chaos-card.fixed {
+  opacity: 0.6;
+  border-color: var(--success);
+}
+
+.chaos-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.chaos-num {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.chaos-num.easy { background: var(--success-soft); color: var(--success); }
+.chaos-num.medium { background: var(--warning-soft); color: var(--warning); }
+.chaos-num.hard { background: var(--danger-soft); color: var(--danger); }
+.chaos-card-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+}
+.chaos-card-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.chaos-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chaos-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  transition: all var(--transition);
+  flex: 1;
+  min-width: 68px;
+}
+.chaos-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.chaos-btn.break { background: var(--danger); border-color: var(--danger); color: #fff; }
+.chaos-btn.break:hover { background: #dc2626; border-color: #dc2626; }
+.chaos-btn.verify { background: var(--success); border-color: var(--success); color: #fff; }
+.chaos-btn.verify:hover { background: #059669; border-color: #059669; }
+.chaos-btn.hint { border-color: var(--warning); color: var(--warning); }
+.chaos-btn.hint:hover { background: var(--warning-soft); }
+.chaos-btn.reset { border-color: var(--border); color: var(--text-tertiary); }
+
+.chaos-hint {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  display: none;
+}
+.chaos-hint.show { display: block; animation: panelIn 0.3s ease; }
+.chaos-timer {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--danger);
+  font-weight: 600;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  padding: 9px 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #5B7B8C, #7A9AA8);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+.toast.success { background: rgba(16, 185, 129, 0.95); }
+.toast.error { background: rgba(239, 68, 68, 0.95); }
+.toast.info { background: rgba(59, 130, 246, 0.95); }
+.toast.warning { background: rgba(245, 158, 11, 0.95); }
+.toast .toast-icon { font-size: 16px; flex-shrink: 0; }
+
+/* ===== AI PANEL ===== */
+.ai-fab {
+  position: fixed;
+  bottom: 28px; right: 28px;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: #fff;
+  color: #fff;
+  border: 3px solid #fff;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(120, 110, 90, 0.18);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ai-fab::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('LogHawk%20鹰隼logo设计需求%20(4).png') center/70% no-repeat;
+  border-radius: 50%;
+}
+.ai-fab::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.ai-fab:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 40px rgba(120, 110, 90, 0.25);
+}
+.ai-fab:hover::after { opacity: 1; }
+.ai-fab:active { transform: scale(0.95); }
+.ai-fab-badge {
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-deep);
+  animation: badgeBounce 1.5s ease-in-out infinite;
+}
+@keyframes badgeBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.ai-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 440px;
+  height: 100vh;
+  background: var(--bg-elevated);
+  z-index: 200;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 1px solid var(--border);
+}
+.ai-panel.open { transform: translateX(0); }
+
+.ai-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+}
+.ai-panel-title {
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-panel-title img {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  padding: 2px;
+}
+
+.ai-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+.icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.ai-config-row {
+  display: none;
+  padding: 10px 20px;
+  gap: 10px;
+  align-items: center;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.ai-config-row.show { display: flex; }
+.ai-config-row label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.ai-config-row input {
+  flex: 1;
+  min-width: 150px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--transition);
+}
+.ai-config-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.ai-context-bar {
+  padding: 8px 20px;
+  background: var(--accent-soft);
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ai-messages::-webkit-scrollbar { width: 5px; }
+.ai-messages::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.ai-msg {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.6;
+  animation: msgIn 0.3s ease;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ai-msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #5B7B8C, #7A9AA8);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.ai-msg.assistant {
+  align-self: flex-start;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.ai-msg.streaming {
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
+.ai-msg.patrol-finding {
+  align-self: stretch;
+  max-width: 100%;
+  background: var(--warning-soft);
+  border: 1px solid var(--warning);
+  color: var(--text-primary);
+  font-size: 12.5px;
+}
+.ai-msg.patrol-error {
+  align-self: stretch;
+  max-width: 100%;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  color: var(--text-primary);
+  font-size: 12.5px;
+}
+
+.ai-typing {
+  display: flex;
+  gap: 5px;
+  padding: 10px 14px;
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.ai-typing span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  animation: typing 1.4s infinite ease-in-out;
+}
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-7px); opacity: 1; }
+}
+
+.ai-input-area {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  background: var(--bg-card);
+}
+.ai-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: all var(--transition);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  resize: none;
+  max-height: 120px;
+  line-height: 1.5;
+}
+.ai-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.ai-send {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #5B7B8C, #7A9AA8);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all var(--transition);
+  align-self: flex-end;
+  white-space: nowrap;
+}
+.ai-send:hover { transform: translateY(-1px); box-shadow: 0 4px 12px var(--accent-glow); }
+.ai-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ===== PATROL TOGGLE ===== */
+.patrol-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+.patrol-toggle:hover { background: var(--bg-subtle); }
+.patrol-toggle.active {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: var(--success);
+}
+.patrol-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: all var(--transition);
+}
+.patrol-toggle.active .patrol-dot {
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: pulse-dot 2s infinite;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 100%;
+    max-width: 320px;
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .main-content { margin-left: 0; }
+  .page-content { padding: 16px; }
+  .topbar { padding: 0 16px; }
+  .search-box { display: none; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-value { font-size: 26px; }
+  .ai-panel { width: 100vw; }
+  .alerts-grid { grid-template-columns: 1fr; }
+  .chaos-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== ACCESSIBILITY ===== */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* scrollbar for sidebar */
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* ===== VIRTUAL SCROLL OPTIMIZATION ===== */
+.log-line { will-change: transform, opacity; }
+
+/* ===== KEYBOARD SHORTCUTS HINT ===== */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ===== CONNECTION STATUS BANNER ===== */
+.conn-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 8px 20px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 9999;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+.conn-banner.show { transform: translateY(0); }
+.conn-banner.reconnecting {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-bottom: 1px solid var(--warning);
+}
+.conn-banner.offline {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-bottom: 1px solid var(--danger);
+}
+.conn-banner.online {
+  background: var(--success-soft);
+  color: var(--success);
+  border-bottom: 1px solid var(--success);
+}
+
+/* ===== LOG EXPORT DROPDOWN ===== */
+.export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: none;
+}
+.export-menu.show { display: block; animation: panelIn 0.2s ease; }
+.export-item {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition);
+}
+.export-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* ===== SHORTCUTS MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.show { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  min-width: 480px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.shortcut-row:last-child { border-bottom: none; }
+.shortcut-keys { display: flex; gap: 6px; }
+
+/* ===== BREADCRUMB ===== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.breadcrumb span { cursor: pointer; }
+.breadcrumb span:hover { color: var(--accent); }
+.breadcrumb .sep { opacity: 0.5; cursor: default; }
+.breadcrumb .current { color: var(--text-primary); font-weight: 600; cursor: default; }
+
+/* ===== SKELETON LOADING ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-subtle) 25%, var(--border) 50%, var(--bg-subtle) 75%);
+  background-size: 200% 100%;
+  animation: skeleton 1.5s infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Connection Status Banner -->
+<div class="conn-banner" id="connBanner">
+  <span id="connBannerText">正在重连...</span>
+</div>
+
+<!-- Shortcuts Modal -->
+<div class="modal-overlay" id="shortcutsModal" onclick="if(event.target===this)closeShortcutsModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+    <div class="modal-title" id="shortcutsTitle">⌨️ 键盘快捷键</div>
+    <div class="shortcut-row"><span>暂停/继续日志流</span><div class="shortcut-keys"><span class="kbd">Space</span></div></div>
+    <div class="shortcut-row"><span>搜索</span><div class="shortcut-keys"><span class="kbd">/</span></div></div>
+    <div class="shortcut-row"><span>打开 AI 面板</span><div class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd">K</span></div></div>
+    <div class="shortcut-row"><span>切换深色/浅色主题</span><div class="shortcut-keys"><span class="kbd">⌘</span><span class="kbd">/</span></div></div>
+    <div class="shortcut-row"><span>切换到日志页</span><div class="shortcut-keys"><span class="kbd">1</span></div></div>
+    <div class="shortcut-row"><span>切换到告警页</span><div class="shortcut-keys"><span class="kbd">2</span></div></div>
+    <div class="shortcut-row"><span>切换到仪表盘</span><div class="shortcut-keys"><span class="kbd">3</span></div></div>
+    <div class="shortcut-row"><span>切换到故障演练</span><div class="shortcut-keys"><span class="kbd">4</span></div></div>
+    <div class="shortcut-row"><span>清空日志</span><div class="shortcut-keys"><span class="kbd">⌫</span></div></div>
+    <div class="shortcut-row"><span>显示快捷键帮助</span><div class="shortcut-keys"><span class="kbd">?</span></div></div>
+    <div style="margin-top:20px;text-align:center">
+      <button class="btn btn-primary" onclick="closeShortcutsModal()">知道了</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand" id="logoClick" title="点击5次解锁彩蛋">
+      <div class="brand-icon">🦅</div>
+      <span class="brand-text">Log<span>Hawk</span></span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">监控</div>
+      <a class="nav-item active" data-tab="logs">
+        <span class="nav-icon">📋</span>
+        <span>实时日志</span>
+      </a>
+      <a class="nav-item" data-tab="alerts">
+        <span class="nav-icon">🚨</span>
+        <span>告警中心</span>
+        <span class="nav-badge" id="alertBadge">0</span>
+      </a>
+      <a class="nav-item" data-tab="dashboard">
+        <span class="nav-icon">📊</span>
+        <span>监控仪表盘</span>
+      </a>
+
+      <div class="nav-section">运维</div>
+      <a class="nav-item" data-tab="chaos">
+        <span class="nav-icon">🧪</span>
+        <span>故障演练</span>
+      </a>
+      <a class="nav-item" data-tab="settings" id="navSettings">
+        <span class="nav-icon">⚙️</span>
+        <span>系统设置</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="system-status">
+        <div class="status-dot" id="wsDot"></div>
+        <div>
+          <div class="status-text" id="wsLabel">系统正常</div>
+          <div class="status-sub">WebSocket 已连接</div>
+        </div>
+      </div>
+      <div class="theme-toggle-row">
+        <button class="theme-toggle-btn" data-theme="light" id="themeLight">☀️ 白色</button>
+        <button class="theme-toggle-btn" data-theme="dark" id="themeDark">🌙 暗色</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="icon-btn" id="mobileMenuBtn" style="display:none" aria-label="Menu">
+          ☰
+        </button>
+        <div>
+          <div class="page-title" id="pageTitle">实时日志</div>
+          <div class="page-subtitle" id="pageSubtitle">LogHawk 日志流 · 实时监控</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="搜索日志、告警、节点...">
+        </div>
+        <button class="topbar-btn" title="通知" id="notifBtn">
+          🔔
+          <span class="badge-dot" id="notifDot" style="display:none"></span>
+        </button>
+        <button class="topbar-btn" title="AI 分析" onclick="openAiPanel()">🤖</button>
+      </div>
+    </header>
+
+    <section class="page-content">
+
+      <!-- ===== LOGS TAB ===== -->
+      <div class="tab-panel active" id="panel-logs">
+        <div class="stats-row">
+          <div class="stat-card accent-1">
+            <div class="stat-header">
+              <span class="stat-label">日志摄入量</span>
+              <div class="stat-icon blue">📈</div>
+            </div>
+            <div class="stat-value" id="statIngest">0</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statIngestChange">+12% / min</span>
+            </div>
+          </div>
+          <div class="stat-card accent-2">
+            <div class="stat-header">
+              <span class="stat-label">活跃告警</span>
+              <div class="stat-icon green">🚨</div>
+            </div>
+            <div class="stat-value" id="statAlerts">0</div>
+            <div class="stat-trend down">
+              <span class="trend-arrow">▼</span>
+              <span id="statAlertsChange">较上小时 -8%</span>
+            </div>
+          </div>
+          <div class="stat-card accent-3">
+            <div class="stat-header">
+              <span class="stat-label">队列深度</span>
+              <div class="stat-icon amber">📦</div>
+            </div>
+            <div class="stat-value" id="statQueue">0</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statQueueChange">msgs 待处理</span>
+            </div>
+          </div>
+          <div class="stat-card accent-4">
+            <div class="stat-header">
+              <span class="stat-label">错误率</span>
+              <div class="stat-icon red">⚠️</div>
+            </div>
+            <div class="stat-value" id="statErrors">0%</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statErrorsChange">24h 统计</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="log-viewer">
+            <div class="log-toolbar">
+              <div class="log-toolbar-left">
+                <div class="window-dots">
+                  <span class="win-dot red"></span>
+                  <span class="win-dot yellow"></span>
+                  <span class="win-dot green"></span>
+                </div>
+                <span class="log-title">loghawk · streaming · /var/log/containers/*.log</span>
+              </div>
+              <div class="log-toolbar-right">
+                <div class="filter-pills">
+                  <button class="filter-pill active" data-lvl="all">ALL</button>
+                  <button class="filter-pill info" data-lvl="INFO">INFO</button>
+                  <button class="filter-pill warn" data-lvl="WARN">WARN</button>
+                  <button class="filter-pill error" data-lvl="ERROR">ERROR</button>
+                  <button class="filter-pill crit" data-lvl="CRIT">CRIT</button>
+                </div>
+                <div style="position:relative">
+                  <button class="log-btn" id="btnExport" onclick="toggleExportMenu()" title="导出日志">
+                    📥 导出
+                  </button>
+                  <div class="export-menu" id="exportMenu">
+                    <div class="export-item" onclick="exportLogs('json')">📄 导出为 JSON</div>
+                    <div class="export-item" onclick="exportLogs('csv')">📊 导出为 CSV</div>
+                    <div class="export-item" onclick="exportLogs('txt')">📝 导出为纯文本</div>
+                  </div>
+                </div>
+                <button class="log-btn" onclick="showShortcutsModal()" title="快捷键 (?)">⌨️</button>
+              </div>
+            </div>
+
+            <div class="log-stream" id="logStream"></div>
+
+            <div class="log-controls">
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="log-btn" id="btnPause">⏸ 暂停</button>
+                <button class="log-btn danger" id="btnClearLogs">🗑 清空</button>
+              </div>
+              <div class="log-count" id="logCount">0 条日志</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ALERTS TAB ===== -->
+      <div class="tab-panel" id="panel-alerts">
+        <div class="stats-row">
+          <div class="stat-card accent-4">
+            <div class="stat-header">
+              <span class="stat-label">严重告警</span>
+              <div class="stat-icon red">🔥</div>
+            </div>
+            <div class="stat-value" style="color:var(--danger)" id="statCritAlerts">0</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statCritAlertsSub">实时统计</span>
+            </div>
+          </div>
+          <div class="stat-card accent-3">
+            <div class="stat-header">
+              <span class="stat-label">警告</span>
+              <div class="stat-icon amber">⚠️</div>
+            </div>
+            <div class="stat-value" id="statWarnAlerts">0</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statWarnAlertsSub">实时统计</span>
+            </div>
+          </div>
+          <div class="stat-card accent-1">
+            <div class="stat-header">
+              <span class="stat-label">总告警</span>
+              <div class="stat-icon blue">🔔</div>
+            </div>
+            <div class="stat-value" id="statTotalAlerts">0</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow">▲</span>
+              <span id="statTotalAlertsSub">当前活跃</span>
+            </div>
+          </div>
+          <div class="stat-card accent-2">
+            <div class="stat-header">
+              <span class="stat-label">WebSocket</span>
+              <div class="stat-icon green">🔌</div>
+            </div>
+            <div class="stat-value" id="statWsStatus" style="font-size:22px">离线</div>
+            <div class="stat-trend up">
+              <span class="trend-arrow" id="statWsArrow">▲</span>
+              <span id="statWsSub">实时连接</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-header" style="padding: 0 4px 16px">
+          <div class="card-title">🚨 告警列表</div>
+          <div class="card-actions">
+            <button class="btn btn-ghost" onclick="clearAllAlerts()">全部清除</button>
+          </div>
+        </div>
+
+        <div class="alerts-grid" id="alertsGrid"></div>
+      </div>
+
+      <!-- ===== DASHBOARD TAB ===== -->
+      <div class="tab-panel" id="panel-dashboard">
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">📈 日志摄入趋势</div>
+                <div class="chart-subtitle">最近 60 秒</div>
+              </div>
+              <div class="chart-value" id="chartIngestValue">0</div>
+            </div>
+            <canvas id="chartIngest"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">🎯 日志级别分布</div>
+                <div class="chart-subtitle">实时统计</div>
+              </div>
+            </div>
+            <canvas id="chartLevels"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">⏱ 处理延迟</div>
+                <div class="chart-subtitle">ms · P50 / P99</div>
+              </div>
+              <div class="chart-value" id="chartLatencyValue">20ms</div>
+            </div>
+            <canvas id="chartLatency"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">🔍 异常检出</div>
+                <div class="chart-subtitle">按类型</div>
+              </div>
+            </div>
+            <canvas id="chartAnomaly"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CHAOS TAB ===== -->
+      <div class="tab-panel" id="panel-chaos">
+        <div class="chaos-stats">
+          <div class="chaos-stat">
+            <div class="num" id="chaosTotal"></div>
+            <div class="label">演练场景</div>
+          </div>
+          <div class="chaos-stat">
+            <div class="num" id="chaosActive" style="color:var(--danger)">0</div>
+            <div class="label">进行中</div>
+          </div>
+          <div class="chaos-stat">
+            <div class="num" id="chaosFixed" style="color:var(--success)">0</div>
+            <div class="label">已修复</div>
+          </div>
+        </div>
+
+        <div class="card-header" style="padding: 0 4px 16px">
+          <div class="card-title">🧪 故障演练场景</div>
+          <div class="card-actions">
+            <button class="btn btn-ghost" onclick="resetAllChaos()">🔄 全部重置</button>
+          </div>
+        </div>
+
+        <div class="chaos-grid" id="chaosGrid"></div>
+
+        <div style="margin-top: 24px" class="section-card">
+          <div class="card-header">
+            <div class="card-title">🔑 Chaos API 配置</div>
+          </div>
+          <div style="padding: 18px 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center">
+            <label style="font-size:12px;color:var(--text-secondary);font-weight:600;white-space:nowrap">API 端点</label>
+            <input type="text" id="chaosEndpoint" value="" placeholder="http://chaos.loghawk:8005（K8s 集群内）"
+              style="flex:1;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-input);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;transition:all var(--transition)"
+              onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px var(--accent-soft)'"
+              onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';saveChaosEndpoint()">
+            <label style="font-size:12px;color:var(--text-secondary);font-weight:600;white-space:nowrap">Token</label>
+            <input type="password" id="chaosToken" placeholder="CHAOS_API_TOKEN"
+              style="width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-input);color:var(--text-primary);font-family:var(--font-mono);font-size:12px;outline:none;transition:all var(--transition)"
+              onfocus="this.style.borderColor='var(--accent)';this.style.boxShadow='0 0 0 3px var(--accent-soft)'"
+              onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none';saveChaosToken()">
+            <button class="btn btn-primary" onclick="testChaosConn()">测试连接</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS TAB ===== -->
+      <div class="tab-panel" id="panel-settings">
+        <div class="section-card">
+          <div class="card-header">
+            <div class="card-title">⚙️ 系统设置</div>
+          </div>
+          <div style="padding: 24px">
+            <p style="color:var(--text-secondary);font-size:13px;line-height:1.8">
+              LogHawk 控制台设置。更多配置项请通过 K8s ConfigMap / Secret 管理。
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<!-- ===== TOASTS ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== AI FAB & PANEL ===== -->
+<button class="ai-fab" id="aiFab" title="AI 日志分析" onclick="openAiPanel()">
+  🤖
+  <span class="ai-fab-badge" id="aiFabBadge" style="display:none">!</span>
+</button>
+
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-panel-header">
+    <div class="ai-panel-title">
+      <img src="LogHawk%20鹰隼logo设计需求%20(4).png" alt="AI助手" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+      AI 日志分析
+    </div>
+    <div class="ai-panel-actions">
+      <div class="patrol-toggle" id="patrolToggle" onclick="togglePatrol()">
+        <span class="patrol-dot"></span>
+        <span>Patrol</span>
+      </div>
+      <button class="icon-btn" onclick="toggleAiConfig()" title="设置">⚙️</button>
+      <button class="icon-btn" onclick="closeAiPanel()" title="关闭">✕</button>
+    </div>
+  </div>
+
+  <div class="ai-config-row" id="aiConfigRow">
+    <label>Endpoint</label>
+    <input type="text" id="aiEndpoint" value="">
+    <label>Model</label>
+    <input type="text" id="aiModel" value="gpt-4o-mini" style="flex:0 0 120px">
+  </div>
+
+  <div class="ai-context-bar">
+    📊 上下文日志: <span id="aiContextCount">0</span> 条
+  </div>
+
+  <div class="ai-messages" id="aiMessages">
+    <div class="ai-msg assistant">👋 你好！我是 LogHawk AI 助手。我可以帮你分析日志异常、排查故障、给出修复建议。当前窗口内的日志会自动作为分析上下文。</div>
+  </div>
+
+  <div class="ai-input-area">
+    <textarea class="ai-input" id="aiInput" rows="1" placeholder="输入问题，例如：最近有哪些异常？"></textarea>
+    <button class="ai-send" id="aiSend" onclick="sendAiMessage()">发送</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   LogHawk Frontend — State & Utilities
+   ============================================================ */
+var state = {
+  wsConnected: false,
+  logCount: 0,
+  ingestRate: 0,
+  alertCount: 0,
+  queueDepth: 0,
+  errorRate: 0,
+  currentFilter: 'all',
+  logoClicks: 0,
+  isGoofy: localStorage.getItem('loghawk-goofy') === 'true',
+  isDark: localStorage.getItem('loghawk-theme') === 'dark',
+  isPaused: false,
+  ingestHistory: Array(60).fill(0),
+  latencyHistory: Array(60).fill(0),
+  anomalyData: {},
+  levelCounts: { INFO: 0, WARN: 0, ERROR: 0, CRIT: 0 },
+  alerts: [],
+  services: []
+};
+
+var logStream, logCount, wsDot, wsLabel, toastContainer, alertsGrid, searchInput;
+
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function rng(mn, mx) { return Math.floor(Math.random() * (mx - mn + 1)) + mn; }
+function fmt(n) { return n.toLocaleString(); }
+
+/* ===== INIT ===== */
+document.addEventListener('DOMContentLoaded', function() {
+  logStream = document.getElementById('logStream');
+  logCount = document.getElementById('logCount');
+  wsDot = document.getElementById('wsDot');
+  wsLabel = document.getElementById('wsLabel');
+  toastContainer = document.getElementById('toastContainer');
+  alertsGrid = document.getElementById('alertsGrid');
+  searchInput = document.getElementById('searchInput');
+
+  // theme init
+  applyTheme();
+
+  // goofy mode init
+  if (state.isGoofy) document.body.classList.add('theme-goofy');
+
+  // init modules (each guarded to prevent single failure from crashing the app)
+  try { renderAlerts(); } catch(e) { console.error('[LogHawk] renderAlerts failed:', e); }
+  try { initCharts(); } catch(e) { console.error('[LogHawk] initCharts failed:', e); }
+  try { fetchRealStats(); } catch(e) { console.error('[LogHawk] fetchRealStats failed:', e); }
+  try { initAiPanel(); } catch(e) { console.error('[LogHawk] initAiPanel failed:', e); }
+  try { initChaos(); } catch(e) { console.error('[LogHawk] initChaos failed:', e); }
+  try { initNav(); } catch(e) { console.error('[LogHawk] initNav failed:', e); }
+  try { initThemeToggles(); } catch(e) { console.error('[LogHawk] initThemeToggles failed:', e); }
+  try { initMobileMenu(); } catch(e) { console.error('[LogHawk] initMobileMenu failed:', e); }
+
+  // real data loop
+  setInterval(function() { try { fetchRealStats(); } catch(e) {} }, 5000);
+  setInterval(function() { try { updateCharts(); } catch(e) {} }, 2000);
+  setInterval(function() { try { fetchLogs(); } catch(e) {} }, 3000);
+  setInterval(function() { try { fetchAlerts(); } catch(e) {} }, 5000);
+
+  // button listeners
+  try { bindLogControls(); } catch(e) { console.error('[LogHawk] bindLogControls failed:', e); }
+});
+
+/* ===== THEME ===== */
+function applyTheme() {
+  if (state.isDark) {
+    document.body.classList.add('theme-dark');
+  } else {
+    document.body.classList.remove('theme-dark');
+  }
+  updateThemeButtons();
+  updateChartTheme();
+}
+function toggleTheme(mode) {
+  state.isDark = mode === 'dark';
+  localStorage.setItem('loghawk-theme', state.isDark ? 'dark' : 'light');
+  applyTheme();
+}
+function updateChartTheme() {
+  if (!charts) return;
+  var isDark = state.isDark;
+  var gridColor = isDark ? 'rgba(212,175,55,0.08)' : 'rgba(180,160,100,0.12)';
+  var tickColor = isDark ? '#8a8070' : '#8a857d';
+  Object.values(charts).forEach(function(c) {
+    if (c.options.scales) {
+      Object.values(c.options.scales).forEach(function(s) {
+        if (s.grid) s.grid.color = gridColor;
+        if (s.ticks) s.ticks.color = tickColor;
+      });
+    }
+    if (c.options.plugins && c.options.plugins.legend && c.options.plugins.legend.labels) {
+      c.options.plugins.legend.labels.color = tickColor;
+    }
+    c.update('none');
+  });
+}
+function initThemeToggles() {
+  document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { toggleTheme(this.dataset.theme); });
+  });
+  updateThemeButtons();
+}
+function updateThemeButtons() {
+  document.querySelectorAll('.theme-toggle-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.theme === (state.isDark ? 'dark' : 'light'));
+  });
+}
+
+/* ===== NAV ===== */
+function initNav() {
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      var tab = this.dataset.tab;
+      if (!tab) return;
+      switchTab(tab, this);
+      // mobile close
+      document.getElementById('sidebar').classList.remove('mobile-open');
+    });
+  });
+}
+function switchTab(tab, navEl) {
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  if (navEl) navEl.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var panel = document.getElementById('panel-' + tab);
+  if (panel) panel.classList.add('active');
+
+  var titles = {
+    logs: ['实时日志', 'LogHawk 日志流 · 实时监控'],
+    alerts: ['告警中心', '异常告警管理 · AI 智能分析'],
+    dashboard: ['监控仪表盘', '关键指标可视化'],
+    chaos: ['故障演练', 'SRE 技能训练沙盒'],
+    settings: ['系统设置', '配置与偏好']
+  };
+  var t = titles[tab] || ['', ''];
+  document.getElementById('pageTitle').textContent = t[0];
+  document.getElementById('pageSubtitle').textContent = t[1];
+}
+function initMobileMenu() {
+  var btn = document.getElementById('mobileMenuBtn');
+  var sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 768 && btn) {
+    btn.style.display = 'flex';
+    btn.addEventListener('click', function() {
+      sb.classList.toggle('mobile-open');
+    });
+  }
+}
+
+/* ===== STATS (real data from Ingest) ===== */
+function fetchRealStats() {
+  // Skip backend calls in local dev (no nginx proxy available)
+  var host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return;
+  fetch('/api/ingest/stats').then(function(r) {
+    return r.ok ? r.json() : null;
+  }).then(function(s) {
+    if (!s) return;
+    state.ingestRate = s.total_ingested || 0;
+    state.queueDepth = s.queue_size || 0;
+    state.alertCount = state.alerts ? state.alerts.length : 0;
+    renderStat('statIngest', fmt(state.ingestRate));
+    renderStat('statQueue', fmt(state.queueDepth));
+    renderStat('statAlerts', state.alertCount);
+    // fetch error rate from metrics
+    fetch('/api/ingest/metrics').then(function(r) {
+      return r.ok ? r.text() : null;
+    }).then(function(t) {
+      if (t) {
+        var m = t.match(/loghawk_ingest_errors_total\s+(\d+)/);
+        if (m) state.errorRate = (parseInt(m[1]) / Math.max(state.ingestRate, 1) * 100).toFixed(1);
+        renderStat('statErrors', state.errorRate + '%');
+      }
+    }).catch(function() {});
+    updateAlertBadge();
+  }).catch(function() {});
+}
+
+/* ===== ALERT FETCH (from Alerter) ===== */
+function fetchAlerts() {
+  var host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return;
+  fetch('/api/alerter/alerts').then(function(r) {
+    return r.ok ? r.json() : null;
+  }).then(function(alerts) {
+    if (!alerts || !alerts.length) return;
+    // Replace state.alerts with latest from server (dedup by ID)
+    var newAlerts = [];
+    var seen = {};
+    var existing = {};
+    state.alerts.forEach(function(a) { existing[a.id || ''] = true; });
+    alerts.forEach(function(a) {
+      var id = a.id || (a.timestamp + a.title);
+      if (seen[id]) return;
+      seen[id] = true;
+      if (!existing[id]) newAlerts.push({
+        level: a.level,
+        title: a.title,
+        desc: a.message,
+        time: toBJTime(a.timestamp),
+        ai: '由 LogHawk Alerter 自动触发',
+        id: id
+      });
+    });
+    if (newAlerts.length > 0) {
+      newAlerts.reverse().forEach(function(a) {
+        state.alerts.unshift(a);
+      });
+      if (state.alerts.length > 50) state.alerts = state.alerts.slice(0, 50);
+      state.alertCount = state.alerts.length;
+      renderAlerts();
+      renderAlertStats();
+      updateAlertBadge();
+    }
+  }).catch(function() {});
+}
+
+function renderStat(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+/* ===== LOG FETCH (from Ingest) ===== */
+var seenLogKeys = {};
+function fetchLogs() {
+  // Skip in local dev
+  var host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0') return;
+  fetch('/api/ingest/logs').then(function(r) {
+    return r.ok ? r.json() : null;
+  }).then(function(entries) {
+    if (!entries || !entries.length || !logStream) return;
+    if (state.isPaused) return;
+    var newCount = 0;
+    entries.forEach(function(e) {
+      var key = e.timestamp + '|' + e.service + '|' + e.message;
+      if (seenLogKeys[key]) return;
+      seenLogKeys[key] = true;
+      // level color class
+      var lvlCls = e.level || 'INFO';
+      var ts = toBJTime(e.timestamp);
+      var svc = e.service || '-';
+      var msg = e.message || '';
+      var line =
+        '<div class="log-line lvl-' + lvlCls.toLowerCase() + '">' +
+          '<span class="log-ts">' + escapeHtml(ts) + '</span>' +
+          '<span class="log-svc">' + escapeHtml(svc) + '</span>' +
+          '<span class="log-lvl ' + lvlCls + '">' + escapeHtml(lvlCls) + '</span>' +
+          '<span class="log-msg">' + escapeHtml(msg) + '</span>' +
+        '</div>';
+      // rAF batched insert
+      pendingLogs.push(line);
+      if (!logFlushScheduled) {
+        logFlushScheduled = true;
+        requestAnimationFrame(flushLogs);
+      }
+      // update level counts
+      var lvl = lvlCls.toUpperCase();
+      if (state.levelCounts[lvl] !== undefined) state.levelCounts[lvl]++;
+      state.logCount++;
+      newCount++;
+    });
+    if (newCount > 0) {
+      if (logCount) logCount.textContent = fmt(state.logCount) + ' 条日志';
+      updateCharts();
+    }
+    // cap seen keys to prevent memory leak
+    var keys = Object.keys(seenLogKeys);
+    if (keys.length > 5000) {
+      var toDelete = keys.slice(0, 2000);
+      toDelete.forEach(function(k) { delete seenLogKeys[k]; });
+    }
+  }).catch(function() {});
+}
+
+function updateAlertBadge() {
+  var ab = document.getElementById('alertBadge');
+  if (ab) {
+    ab.textContent = state.alertCount;
+    ab.style.display = state.alertCount > 0 ? 'flex' : 'none';
+  }
+  var nd = document.getElementById('notifDot');
+  if (nd) nd.style.display = state.alertCount > 0 ? 'block' : 'none';
+}
+
+/* ===== LOGS ===== */
+
+function escapeHtml(s) {
+  var div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function bindLogControls() {
+  var btn;
+  btn = document.getElementById('btnPause');
+  if (btn) btn.addEventListener('click', function() {
+    state.isPaused = !state.isPaused;
+    this.textContent = state.isPaused ? '▶ 继续' : '⏸ 暂停';
+    showToast(state.isPaused ? '⏸ 日志流已暂停' : '▶ 日志流已恢复', 'info');
+  });
+  btn = document.getElementById('btnClearLogs');
+  if (btn) btn.addEventListener('click', function() {
+    if (logStream) logStream.innerHTML = '';
+    state.logCount = 0;
+    state.levelCounts = { INFO: 0, WARN: 0, ERROR: 0, CRIT: 0 };
+    if (logCount) logCount.textContent = '0 条日志';
+    updateCharts();
+    showToast('🗑 日志已清空', 'info');
+  });
+
+  // filter pills
+  document.querySelectorAll('.filter-pill').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      state.currentFilter = this.dataset.lvl;
+      var lines = logStream ? logStream.querySelectorAll('.log-line') : [];
+      lines.forEach(function(l) {
+        var match = state.currentFilter === 'all' || l.classList.contains('lvl-' + state.currentFilter.toLowerCase());
+        l.style.display = match ? '' : 'none';
+      });
+    });
+  });
+
+  // logo easter egg
+  var lc = document.getElementById('logoClick');
+  if (lc) lc.addEventListener('click', function() {
+    state.logoClicks++;
+    if (state.logoClicks >= 5 && !state.isGoofy) {
+      state.isGoofy = true;
+      state.logoClicks = 0;
+      localStorage.setItem('loghawk-goofy', 'true');
+      document.body.classList.add('theme-goofy');
+      renderAlerts();
+      updateCharts();
+      showToast('🦅 笨鹰觉醒！沙雕模式已激活！', 'info');
+    } else if (state.logoClicks >= 5 && state.isGoofy) {
+      state.isGoofy = false;
+      state.logoClicks = 0;
+      localStorage.removeItem('loghawk-goofy');
+      document.body.classList.remove('theme-goofy');
+      renderAlerts();
+      updateCharts();
+      showToast('🎯 专业模式已恢复', 'success');
+    }
+  });
+}
+
+/* ===== ALERTS ===== */
+function renderAlerts() {
+  if (!alertsGrid) return;
+  // alerts come from WebSocket, render what we have
+
+  alertsGrid.innerHTML = '';
+  state.alerts.forEach(function(a) {
+    var card = document.createElement('div');
+    card.className = 'alert-card ' + a.level;
+    card.innerHTML =
+      '<div class="alert-top">' +
+        '<div>' +
+          '<span class="alert-badge ' + a.level + '"><span class="alert-dot"></span>' + a.level.toUpperCase() + '</span>' +
+          '<div class="alert-title" style="margin-top:6px">' + a.title + '</div>' +
+        '</div>' +
+        '<span class="alert-time">' + a.time + '</span>' +
+      '</div>' +
+      '<div class="alert-desc">' + a.desc + '</div>' +
+      '<div class="alert-ai-suggestion">' +
+        '<span class="alert-ai-icon">🤖</span>' +
+        '<span>' + a.ai + '</span>' +
+      '</div>' +
+      '<div class="alert-footer" style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">' +
+        '<button class="alert-action" onclick="showToast(\'已标记为已处理\', \'success\')">标记已处理</button>' +
+        '<button class="alert-action" onclick="openAiPanel();sendAiMessage(\'' + escapeHtml(a.title) + '\')">AI 深入分析</button>' +
+      '</div>';
+    alertsGrid.appendChild(card);
+  });
+  renderAlertStats();
+}
+
+function renderAlertStats() {
+  var crit = 0, warn = 0;
+  state.alerts.forEach(function(a) {
+    if (a.level === 'crit' || a.level === 'error') crit++;
+    else if (a.level === 'warn') warn++;
+  });
+  renderStat('statCritAlerts', crit);
+  renderStat('statWarnAlerts', warn);
+  renderStat('statTotalAlerts', state.alerts.length);
+  var wsStatus = document.getElementById('statWsStatus');
+  var wsArrow = document.getElementById('statWsArrow');
+  var wsSub = document.getElementById('statWsSub');
+  if (wsStatus) {
+    wsStatus.textContent = state.wsConnected ? '在线' : '离线';
+    wsStatus.style.color = state.wsConnected ? 'var(--success)' : 'var(--danger)';
+  }
+  if (wsArrow) wsArrow.textContent = state.wsConnected ? '▲' : '▼';
+  if (wsSub) wsSub.textContent = state.wsConnected ? '实时连接' : '等待连接';
+}
+
+function clearAllAlerts() {
+  state.alerts = [];
+  renderAlerts();
+  renderAlertStats();
+  showToast('✅ 全部告警已清除', 'success');
+}
+
+/* ===== CHARTS ===== */
+var charts = {};
+function initCharts() {
+  var isDark = state.isDark;
+  var gridColor = isDark ? 'rgba(212,175,55,0.08)' : 'rgba(180,160,100,0.12)';
+  var tickColor = isDark ? '#8a8070' : '#8a857d';
+
+  var ctx1 = document.getElementById('chartIngest');
+  if (ctx1) charts.ingest = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: Array(60).fill(''),
+      datasets: [{
+        label: 'Logs/s',
+        data: state.ingestHistory,
+        borderColor: '#5B7B8C',
+        backgroundColor: function(ctx) {
+          var chart = ctx.chart, ctx2 = chart.ctx;
+          var gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
+          gradient.addColorStop(0, 'rgba(91, 123, 140, 0.25)');
+          gradient.addColorStop(1, 'rgba(91, 123, 140, 0.0)');
+          return gradient;
+        },
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0,
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  var ctx2 = document.getElementById('chartLevels');
+  if (ctx2) charts.levels = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['INFO', 'WARN', 'ERROR', 'CRIT'],
+      datasets: [{
+        data: [state.levelCounts.INFO || 1, state.levelCounts.WARN || 1, state.levelCounts.ERROR || 1, state.levelCounts.CRIT || 0],
+        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#7f1d1d'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: tickColor,
+            font: { size: 11 },
+            padding: 12,
+            boxWidth: 10,
+            boxHeight: 10,
+            borderRadius: 2
+          }
+        }
+      }
+    }
+  });
+
+  var ctx3 = document.getElementById('chartLatency');
+  if (ctx3) charts.latency = new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: Array(60).fill(''),
+      datasets: [
+        {
+          label: 'P50 ms',
+          data: state.latencyHistory.map(function(v) { return Math.round(v * 0.6); }),
+          borderColor: '#6B9E7D',
+          backgroundColor: 'rgba(107,158,125,0.12)',
+          fill: false,
+          tension: 0.35,
+          pointRadius: 0,
+          borderWidth: 2
+        },
+        {
+          label: 'P99 ms',
+          data: state.latencyHistory,
+          borderColor: '#D4A574',
+          backgroundColor: 'rgba(212,165,116,0.12)',
+          fill: false,
+          tension: 0.35,
+          pointRadius: 0,
+          borderWidth: 2,
+          borderDash: [4, 4]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          align: 'end',
+          labels: { color: tickColor, font: { size: 10 }, boxWidth: 10, boxHeight: 2 }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0,
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 10 } }
+        }
+      }
+    }
+  });
+
+  var ctx4 = document.getElementById('chartAnomaly');
+  if (ctx4) charts.anomaly = new Chart(ctx4, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(state.anomalyData),
+      datasets: [{
+        label: 'Count',
+        data: Object.values(state.anomalyData),
+        backgroundColor: ['#C97B7B', '#D4A574', '#6B9E7D', '#5B7B8C', '#C9B896'],
+        borderRadius: 6,
+        borderSkipped: false,
+        barThickness: 24
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: tickColor, font: { size: 10 } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function updateCharts() {
+  if (charts.ingest) {
+    charts.ingest.data.datasets[0].data = state.ingestHistory;
+    charts.ingest.update('none');
+    var val = document.getElementById('chartIngestValue');
+    if (val) val.textContent = fmt(state.ingestRate) + '/s';
+  }
+  if (charts.levels) {
+    charts.levels.data.datasets[0].data = [
+      state.levelCounts.INFO || 1,
+      state.levelCounts.WARN || 1,
+      state.levelCounts.ERROR || 1,
+      state.levelCounts.CRIT || 0
+    ];
+    charts.levels.update('none');
+  }
+  if (charts.latency) {
+    charts.latency.data.datasets[0].data = state.latencyHistory.map(function(v) { return Math.round(v * 0.6); });
+    charts.latency.data.datasets[1].data = state.latencyHistory;
+    charts.latency.update('none');
+    var val = document.getElementById('chartLatencyValue');
+    if (val) {
+      var avg = state.latencyHistory.reduce(function(a, b) { return a + b; }, 0) / state.latencyHistory.length;
+      val.textContent = Math.round(avg) + 'ms';
+    }
+  }
+}
+
+/* ===== TOAST ===== */
+function showToast(msg, type) {
+  if (!toastContainer) return;
+  type = type || 'info';
+  var icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span><span>' + msg + '</span>';
+  toastContainer.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(40px) scale(0.9)';
+    t.style.transition = 'all 0.3s ease';
+    setTimeout(function() { t.remove(); }, 300);
+  }, 3800);
+}
+
+/* ===== AI PANEL ===== */
+var aiPanel, aiFab, aiMessages, aiInput, aiSend, aiEndpoint, aiContextCount, aiConfigRow, aiIsStreaming = false;
+var patrolActive = false, patrolStreamReader = null, patrolSessionId = null, chatSessionId = null;
+
+function initAiPanel() {
+  aiPanel = document.getElementById('aiPanel');
+  aiFab = document.getElementById('aiFab');
+  aiMessages = document.getElementById('aiMessages');
+  aiInput = document.getElementById('aiInput');
+  aiSend = document.getElementById('aiSend');
+  aiEndpoint = document.getElementById('aiEndpoint');
+  aiContextCount = document.getElementById('aiContextCount');
+  aiConfigRow = document.getElementById('aiConfigRow');
+
+  if (!aiPanel || !aiFab) return;
+
+  var ep = localStorage.getItem('loghawk-ai-endpoint');
+  // Clear stale K8s DNS endpoint from localStorage when running locally
+  var host = location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  if (ep && isLocal && ep.indexOf('.loghawk') >= 0 && ep.indexOf('localhost') < 0 && ep.indexOf('127.0.0.1') < 0) {
+    localStorage.removeItem('loghawk-ai-endpoint');
+    ep = '';
+  }
+  if (ep) aiEndpoint.value = ep;
+
+  aiEndpoint.addEventListener('change', function() {
+    localStorage.setItem('loghawk-ai-endpoint', aiEndpoint.value);
+  });
+
+  aiInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiMessage(); }
+  });
+  aiInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+
+  chatSessionId = 'session-' + Date.now();
+}
+
+function openAiPanel() {
+  if (!aiPanel) return;
+  aiPanel.classList.add('open');
+  aiFab.style.display = 'none';
+  updateAiContext();
+}
+function closeAiPanel() {
+  if (!aiPanel) return;
+  aiPanel.classList.remove('open');
+  aiFab.style.display = 'flex';
+}
+function toggleAiConfig() {
+  if (!aiConfigRow) return;
+  aiConfigRow.classList.toggle('show');
+}
+
+function updateAiContext() {
+  if (!logStream || !aiContextCount) return;
+  var c = logStream.querySelectorAll('.log-line').length;
+  aiContextCount.textContent = c;
+}
+
+function sendAiMessage(question) {
+  if (!aiInput) return;
+  var q = question || aiInput.value.trim();
+  if (!q || aiIsStreaming) return;
+  aiInput.value = '';
+  aiInput.style.height = 'auto';
+  aiSend.disabled = true;
+  aiIsStreaming = true;
+  addAiMsg(q, 'user');
+
+  var ld = document.createElement('div');
+  ld.className = 'ai-typing';
+  ld.id = 'aiLoading';
+  ld.innerHTML = '<span></span><span></span><span></span>';
+  if (aiMessages) { aiMessages.appendChild(ld); aiMessages.scrollTop = aiMessages.scrollHeight; }
+
+  var ls = logStream ? logStream.querySelectorAll('.log-line') : [];
+  var logs = [];
+  ls.forEach(function(l) {
+    var ts = l.querySelector('.log-ts'), lv = l.querySelector('.log-lvl'), m = l.querySelector('.log-msg');
+    if (ts && lv && m) logs.push({
+      timestamp: ts.textContent.trim(),
+      level: lv.textContent.trim(),
+      message: m.textContent.trim()
+    });
+  });
+  if (logs.length > 80) logs = logs.slice(logs.length - 80);
+
+  var ep = aiEndpoint ? aiEndpoint.value : '';
+  if (!ep) { removeLoading(); addAiMsg('⚠️ 未配置 AI Proxy 端点，请在设置中填写（K8s 内网建议留空使用相对路径 /api）', 'assistant'); aiIsStreaming = false; if (aiSend) aiSend.disabled = false; return; }
+  fetch(ep + '/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ logs: logs, question: q, session_id: chatSessionId, goofy: state.isGoofy })
+  }).then(function(r) {
+    if (!r.ok) throw new Error('Proxy ' + r.status);
+    return readSSE(r);
+  }).catch(function(e) {
+    removeLoading();
+    addAiMsg('❌ AI 连接失败: ' + e.message + '\n\n请检查 AI Proxy 端点配置（点击 ⚙️ 设置）。', 'assistant');
+    aiIsStreaming = false;
+    if (aiSend) aiSend.disabled = false;
+  });
+}
+
+function readSSE(resp) {
+  var reader = resp.body.getReader(), decoder = new TextDecoder(), div = null;
+  function pump() {
+    reader.read().then(function(r) {
+      if (r.done) { finishStream(div); return; }
+      var t = decoder.decode(r.value, { stream: true });
+      var ls = t.split('\n');
+      for (var i = 0; i < ls.length; i++) {
+        var l = ls[i];
+        if (!l.startsWith('data: ')) continue;
+        var d = l.slice(6);
+        if (d === '[DONE]') { finishStream(div); return; }
+        if (!div) {
+          removeLoading();
+          div = addAiMsg('', 'assistant');
+          div.classList.add('streaming');
+        }
+        div.textContent += d;
+        if (aiMessages) aiMessages.scrollTop = aiMessages.scrollHeight;
+      }
+      pump();
+    }).catch(function() { finishStream(div); });
+  }
+  pump();
+}
+
+function finishStream(div) {
+  removeLoading();
+  if (div) div.classList.remove('streaming');
+  aiIsStreaming = false;
+  if (aiSend) aiSend.disabled = false;
+  updateAiContext();
+}
+
+function removeLoading() {
+  var ld = document.getElementById('aiLoading');
+  if (ld) ld.remove();
+}
+
+function addAiMsg(txt, role) {
+  var d = document.createElement('div');
+  d.className = 'ai-msg ' + (role || 'assistant');
+  d.textContent = txt;
+  if (aiMessages) { aiMessages.appendChild(d); aiMessages.scrollTop = aiMessages.scrollHeight; }
+  return d;
+}
+
+/* ===== PATROL ===== */
+function togglePatrol() {
+  var btn = document.getElementById('patrolToggle');
+  var ep = aiEndpoint ? aiEndpoint.value : '';
+  if (!ep) { showToast('⚠️ 未配置 AI Proxy 端点，请在设置中填写', 'warning'); return; }
+  if (!patrolActive) {
+    fetch(ep + '/api/patrol/start', { method: 'POST' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        patrolSessionId = d.session_id;
+        patrolActive = true;
+        if (btn) btn.classList.add('active');
+        startPatrolStream();
+        showToast('🔍 AI 巡检已启动', 'success');
+      }).catch(function(e) {
+        showToast('⚠️ AI Proxy 服务未启动，本地无法使用巡检功能', 'warning');
+      });
+  } else {
+    fetch(ep + '/api/patrol/stop', { method: 'POST' })
+      .then(function() {
+        patrolActive = false;
+        if (btn) btn.classList.remove('active');
+        if (patrolStreamReader) { patrolStreamReader.cancel(); patrolStreamReader = null; }
+        showToast('AI 巡检已停止', 'info');
+      }).catch(function() {
+        patrolActive = false;
+        if (btn) btn.classList.remove('active');
+        if (patrolStreamReader) { patrolStreamReader.cancel(); patrolStreamReader = null; }
+      });
+  }
+}
+
+function startPatrolStream() {
+  var ep = aiEndpoint ? aiEndpoint.value : '';
+  if (!ep) return;
+  fetch(ep + '/api/patrol/stream').then(function(resp) {
+    var reader = resp.body.getReader();
+    patrolStreamReader = reader;
+    var decoder = new TextDecoder();
+    function pump() {
+      reader.read().then(function(r) {
+        if (r.done) { if (patrolActive) setTimeout(startPatrolStream, 5000); return; }
+        var t = decoder.decode(r.value, { stream: true });
+        var ls = t.split('\n');
+        for (var i = 0; i < ls.length; i++) {
+          var l = ls[i];
+          if (!l.startsWith('data: ')) continue;
+          var d = l.slice(6);
+          if (d === '[DONE]') continue;
+          try {
+            var f = JSON.parse(d);
+            var cls = f.level === 'error' ? 'patrol-error' : 'patrol-finding';
+            var div = addAiMsg('', 'assistant');
+            div.className = 'ai-msg assistant ' + cls;
+            div.innerHTML = '<strong>🔍 巡检发现</strong><br>' + (f.summary || f.message || d);
+            // trigger notification
+            showToast('🚨 巡检发现: ' + (f.summary || f.message || '异常').substring(0, 50), f.level === 'error' ? 'error' : 'warning');
+            var badge = document.getElementById('aiFabBadge');
+            if (badge) { badge.style.display = 'flex'; badge.textContent = '!'; }
+          } catch(e) {}
+        }
+        pump();
+      }).catch(function() { if (patrolActive) setTimeout(startPatrolStream, 5000); });
+    }
+    pump();
+  }).catch(function() { if (patrolActive) setTimeout(startPatrolStream, 5000); });
+}
+
+/* ===== CHAOS ===== */
+var chaosScenarios = [
+  { id: 'pod-deleted',  name: 'Pod 神秘消失',    desc: 'Ingest Pod 持续 CrashLoopBackOff，镜像 tag 被篡改', diff: 'easy',   emoji: '🐟' },
+  { id: 'service-broken', name: '流量进不来了',   desc: '前端能打开但数据全空，Service selector 被修改',    diff: 'easy',   emoji: '🐟' },
+  { id: 'config-messed', name: '配置被人改了',    desc: '日志摄入全部失败，ConfigMap 值被篡改',             diff: 'medium', emoji: '🐣' },
+  { id: 'scale-zero',    name: '谁把副本缩成 0',  desc: 'Ingest 服务完全不可用，Deployment 副本为 0',       diff: 'medium', emoji: '🐣' },
+  { id: 'network-blocked',name: '网络被墙了',     desc: '服务间互调不通系统瘫痪，DenyAll NetworkPolicy',     diff: 'hard',   emoji: '🐔' },
+  { id: 'disk-full',     name: '磁盘要炸了',      desc: '节点磁盘压力 Pod 被驱逐，磁盘填充 Pod 作祟',        diff: 'hard',   emoji: '🐔' }
+];
+
+function initChaos() {
+  var ep = localStorage.getItem('loghawk-chaos-endpoint');
+  // Clear stale K8s DNS endpoint from localStorage when running locally
+  var host = location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  if (ep && isLocal && ep.indexOf('.loghawk') >= 0 && ep.indexOf('localhost') < 0 && ep.indexOf('127.0.0.1') < 0) {
+    localStorage.removeItem('loghawk-chaos-endpoint');
+    ep = '';
+  }
+  if (ep) {
+    var inp = document.getElementById('chaosEndpoint');
+    if (inp) inp.value = ep;
+  }
+  var token = localStorage.getItem('loghawk-chaos-token');
+  if (token) {
+    var tinp = document.getElementById('chaosToken');
+    if (tinp) tinp.value = token;
+  }
+  renderChaosCards();
+  var ct = document.getElementById('chaosTotal');
+  if (ct) ct.textContent = chaosScenarios.length;
+  // Defer to allow DOM to settle, then refresh status (guard will skip if unreachable)
+  setTimeout(refreshChaosStatus, 100);
+}
+
+function renderChaosCards() {
+  var g = document.getElementById('chaosGrid');
+  if (!g) return;
+  g.innerHTML = '';
+  chaosScenarios.forEach(function(s, i) {
+    var card = document.createElement('div');
+    card.className = 'chaos-card';
+    card.id = 'chaos-' + s.id;
+    card.innerHTML =
+      '<div class="chaos-card-header">' +
+        '<span class="chaos-num ' + s.diff + '">' + (i + 1) + '</span>' +
+        '<div>' +
+          '<div class="chaos-card-title">' + s.emoji + ' ' + s.name + '</div>' +
+          '<div style="font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-top:2px">' + s.diff + ' · 难度 ' + (s.diff === 'easy' ? '⭐' : s.diff === 'medium' ? '⭐⭐' : '⭐⭐⭐') + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="chaos-card-desc">' + s.desc + '</div>' +
+      '<div class="chaos-card-actions">' +
+        '<button class="chaos-btn break" onclick="doBreak(\'' + s.id + '\')">💥 Break</button>' +
+        '<button class="chaos-btn verify" onclick="doVerify(\'' + s.id + '\')">✓ Verify</button>' +
+        '<button class="chaos-btn hint" onclick="showHint(\'' + s.id + '\')">💡 Hint</button>' +
+        '<button class="chaos-btn reset" onclick="doReset(\'' + s.id + '\')">↺ Reset</button>' +
+      '</div>' +
+      '<div class="chaos-timer" id="timer-' + s.id + '"></div>' +
+      '<div class="chaos-hint" id="hint-' + s.id + '"></div>';
+    g.appendChild(card);
+  });
+}
+
+function chaosHeaders() {
+  var h = { 'Content-Type': 'application/json' };
+  var token = document.getElementById('chaosToken');
+  if (token && token.value) h['Authorization'] = 'Bearer ' + token.value;
+  return h;
+}
+
+function getChaosEp() {
+  var inp = document.getElementById('chaosEndpoint');
+  return (inp ? inp.value.trim() : '').replace(/\/$/, '');
+}
+
+// Returns true if the chaos endpoint is reachable in the current environment.
+// Returns false when:
+//   - endpoint is empty (not configured)
+//   - running on localhost/127.0.0.1 and endpoint points to K8s internal DNS
+// This prevents net::ERR_NAME_NOT_RESOLVED console errors in local dev.
+function toBJTime(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  var h = (d.getUTCHours() + 8) % 24;
+  return ('0' + h).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2) + ':' + ('0' + d.getUTCSeconds()).slice(-2);
+}
+
+function chaosReachable() {
+  var ep = getChaosEp();
+  if (!ep) return false;
+  var host = location.hostname;
+  var isLocal = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  if (isLocal && ep.indexOf('chaos.loghawk') >= 0) return false;
+  if (isLocal && ep.indexOf('.loghawk') >= 0 && ep.indexOf('localhost') < 0 && ep.indexOf('127.0.0.1') < 0) return false;
+  return true;
+}
+
+function saveChaosEndpoint() {
+  var inp = document.getElementById('chaosEndpoint');
+  if (inp) localStorage.setItem('loghawk-chaos-endpoint', inp.value);
+}
+function saveChaosToken() {
+  var inp = document.getElementById('chaosToken');
+  if (inp) localStorage.setItem('loghawk-chaos-token', inp.value);
+}
+function testChaosConn() {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署，请在 K8s 集群环境使用', 'warning'); return; }
+  fetch(getChaosEp() + '/health', { headers: chaosHeaders() })
+    .then(function(r) {
+      if (r.ok) return r.json();
+      throw new Error('HTTP ' + r.status);
+    })
+    .then(function() { showToast('✅ Chaos 服务连接正常', 'success'); })
+    .catch(function(e) { showToast('❌ 连接失败: ' + e.message, 'error'); });
+}
+
+function doBreak(sid) {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署', 'warning'); return; }
+  fetch(getChaosEp() + '/chaos/break?scenario=' + sid, {
+    method: 'POST', headers: chaosHeaders()
+  }).then(function(r) {
+    if (r.status === 401) throw new Error('未授权：请配置正确的 Chaos API Token');
+    return r.json();
+  }).then(function(d) {
+    if (d.error) { showToast('❌ ' + d.error, 'error'); return; }
+    showToast('💥 故障已注入: ' + sid, 'info');
+    refreshChaosStatus();
+  }).catch(function(e) {
+    showToast('❌ Chaos 服务连接失败: ' + e.message, 'error');
+  });
+}
+
+function doVerify(sid) {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署', 'warning'); return; }
+  fetch(getChaosEp() + '/chaos/verify?scenario=' + sid, {
+    method: 'POST', headers: chaosHeaders()
+  }).then(function(r) {
+    if (r.status === 401) throw new Error('未授权：请配置正确的 Chaos API Token');
+    return r.json();
+  }).then(function(d) {
+    if (d.passed) {
+      showToast('🎉 ' + d.message, 'success');
+      // add new alert for fixed scenario
+      state.alerts.unshift({
+        level: 'success' in {} ? 'info' : 'info',
+        title: '✅ 故障已修复: ' + sid,
+        desc: d.message,
+        time: '刚刚',
+        ai: '完美！故障场景 ' + sid + ' 已成功修复。继续挑战下一个场景吧！'
+      });
+      renderAlerts();
+    } else {
+      showToast('❌ ' + d.message, 'error');
+    }
+    refreshChaosStatus();
+  }).catch(function(e) {
+    showToast('❌ Chaos 服务连接失败: ' + e.message, 'error');
+  });
+}
+
+function showHint(sid) {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署', 'warning'); return; }
+  fetch(getChaosEp() + '/chaos/hint?scenario=' + sid + '&level=1', {
+    headers: chaosHeaders()
+  }).then(function(r) {
+    if (r.status === 401) throw new Error('未授权');
+    return r.json();
+  }).then(function(d) {
+    var b = document.getElementById('hint-' + sid);
+    if (b) {
+      b.textContent = '💡 Hint: ' + d.hint;
+      b.classList.add('show');
+    }
+  }).catch(function(e) { showToast('Hint 获取失败: ' + e.message, 'error'); });
+}
+
+function doReset(sid) {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署', 'warning'); return; }
+  fetch(getChaosEp() + '/chaos/reset?scenario=' + sid, {
+    method: 'POST', headers: chaosHeaders()
+  }).then(function(r) {
+    if (r.status === 401) throw new Error('未授权');
+    return r.json();
+  }).then(function() {
+    showToast('✅ 已重置: ' + sid, 'success');
+    refreshChaosStatus();
+    var b = document.getElementById('hint-' + sid);
+    if (b) b.classList.remove('show');
+  }).catch(function(e) { showToast('❌ 重置失败: ' + e.message, 'error'); });
+}
+
+function resetAllChaos() {
+  if (!chaosReachable()) { showToast('⚠️ 本地开发模式：Chaos 服务未部署', 'warning'); return; }
+  fetch(getChaosEp() + '/chaos/reset', {
+    method: 'POST', headers: chaosHeaders()
+  }).then(function() {
+    showToast('✅ 全部已重置', 'success');
+    refreshChaosStatus();
+    document.querySelectorAll('.chaos-hint').forEach(function(h) { h.classList.remove('show'); });
+  }).catch(function(e) { showToast('❌ 重置失败: ' + e.message, 'error'); });
+}
+
+function refreshChaosStatus() {
+  try {
+    var ep = getChaosEp();
+    if (!chaosReachable() || !ep) {
+      var ca0 = document.getElementById('chaosActive'); if (ca0) ca0.textContent = '0';
+      var cf0 = document.getElementById('chaosFixed'); if (cf0) cf0.textContent = '0';
+      return;
+    }
+    fetch(ep + '/chaos/status', { headers: chaosHeaders(), mode: 'cors' }).then(function(r) {
+      if (!r.ok) throw new Error('status ' + r.status);
+      return r.json();
+    }).then(function(d) {
+      var ss = d.scenarios || {};
+      var active = 0, fixed = 0;
+      Object.keys(ss).forEach(function(sid) {
+        var s = ss[sid];
+        var c = document.getElementById('chaos-' + sid);
+        var t = document.getElementById('timer-' + sid);
+        if (!c) return;
+        c.classList.remove('active', 'fixed');
+        if (s.active) { c.classList.add('active'); active++; }
+        if (s.fixed) { c.classList.add('fixed'); fixed++; }
+        if (t) {
+          if (s.active && s.auto_recover_sec > 0) {
+            var mm = Math.floor(s.auto_recover_sec / 60), ss2 = s.auto_recover_sec % 60;
+            t.textContent = '⏱ 自动恢复: ' + mm + '分' + ss2 + '秒';
+          } else {
+            t.textContent = '';
+          }
+        }
+      });
+      var ca = document.getElementById('chaosActive'); if (ca) ca.textContent = active;
+      var cf = document.getElementById('chaosFixed'); if (cf) cf.textContent = fixed;
+    }).catch(function() {
+      var ca3 = document.getElementById('chaosActive'); if (ca3) ca3.textContent = '0';
+      var cf3 = document.getElementById('chaosFixed'); if (cf3) cf3.textContent = '0';
+    });
+  } catch(e) {
+    var ca4 = document.getElementById('chaosActive'); if (ca4) ca4.textContent = '0';
+    var cf4 = document.getElementById('chaosFixed'); if (cf4) cf4.textContent = '0';
+  }
+}
+
+/* ===== WS (simulated) ===== */
+// Real WS connection would go here; for now we simulate with the log generator.
+
+/* ============================================================
+   Enterprise Features: Connection Manager, Export, Shortcuts,
+   Debounce, Error Boundary, Performance Optimization
+   ============================================================ */
+
+/* ===== CONNECTION MANAGER (with heartbeat & exponential backoff) ===== */
+var connManager = {
+  status: 'online', // online, reconnecting, offline
+  reconnectAttempts: 0,
+  maxReconnectDelay: 30000,
+  heartbeatInterval: null,
+  setStatus: function(status) {
+    if (this.status === status) return;
+    this.status = status;
+    var banner = document.getElementById('connBanner');
+    var text = document.getElementById('connBannerText');
+    var dot = document.getElementById('wsDot');
+    var label = document.getElementById('wsLabel');
+    var sub = document.querySelector('.status-sub');
+    if (!banner || !text) return;
+    banner.className = 'conn-banner show ' + status;
+    if (status === 'online') {
+      text.textContent = '✓ 连接已恢复';
+      if (dot) { dot.className = 'status-dot'; }
+      if (label) label.textContent = '系统正常';
+      if (sub) sub.textContent = 'WebSocket 已连接';
+      setTimeout(function() { banner.classList.remove('show'); }, 2000);
+      this.reconnectAttempts = 0;
+    } else if (status === 'reconnecting') {
+      text.textContent = '🔄 连接断开，正在重连... (第 ' + this.reconnectAttempts + ' 次)';
+      if (dot) { dot.className = 'status-dot offline'; }
+      if (label) label.textContent = '重连中';
+      if (sub) sub.textContent = '正在尝试重新连接';
+    } else if (status === 'offline') {
+      text.textContent = '⚠️ 连接已断开，请检查网络或刷新页面';
+      if (dot) { dot.className = 'status-dot offline'; }
+      if (label) label.textContent = '离线模式';
+      if (sub) sub.textContent = '数据可能不是最新';
+    }
+  },
+  simulateDisconnect: function() {
+    var self = this;
+    this.setStatus('reconnecting');
+    this.reconnectAttempts = 1;
+    var delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectDelay);
+    setTimeout(function() {
+      self.setStatus('online');
+    }, delay);
+  }
+};
+
+/* ===== DEBOUNCE & THROTTLE UTILITIES ===== */
+function debounce(fn, delay) {
+  var timer = null;
+  return function() {
+    var context = this, args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(context, args); }, delay);
+  };
+}
+function throttle(fn, limit) {
+  var inThrottle = false;
+  return function() {
+    var context = this, args = arguments;
+    if (!inThrottle) {
+      fn.apply(context, args);
+      inThrottle = true;
+      setTimeout(function() { inThrottle = false; }, limit);
+    }
+  };
+}
+
+/* ===== LOG EXPORT ===== */
+function toggleExportMenu() {
+  var menu = document.getElementById('exportMenu');
+  if (menu) menu.classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  var menu = document.getElementById('exportMenu');
+  var btn = document.getElementById('btnExport');
+  if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('show');
+  }
+});
+
+function exportLogs(format) {
+  var lines = logStream ? logStream.querySelectorAll('.log-line') : [];
+  var logs = [];
+  lines.forEach(function(l) {
+    var ts = l.querySelector('.log-ts'), svc = l.querySelector('.log-svc'), lv = l.querySelector('.log-lvl'), msg = l.querySelector('.log-msg');
+    if (ts && svc && lv && msg) logs.push({
+      timestamp: ts.textContent.trim(),
+      service: svc.textContent.trim(),
+      level: lv.textContent.trim(),
+      message: msg.textContent.trim()
+    });
+  });
+
+  var content = '', mime = '', ext = '';
+  if (format === 'json') {
+    content = JSON.stringify(logs, null, 2);
+    mime = 'application/json';
+    ext = 'json';
+  } else if (format === 'csv') {
+    content = 'timestamp,service,level,message\n';
+    logs.forEach(function(l) {
+      content += '"' + l.timestamp + '","' + l.service + '","' + l.level + '","' + l.message.replace(/"/g, '""') + '"\n';
+    });
+    mime = 'text/csv';
+    ext = 'csv';
+  } else {
+    logs.forEach(function(l) {
+      content += l.timestamp + ' [' + l.service + '] ' + l.level + ': ' + l.message + '\n';
+    });
+    mime = 'text/plain';
+    ext = 'txt';
+  }
+
+  var blob = new Blob([content], { type: mime });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'loghawk-export-' + Date.now() + '.' + ext;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toggleExportMenu();
+  showToast('📥 已导出 ' + logs.length + ' 条日志', 'success');
+}
+
+/* ===== KEYBOARD SHORTCUTS ===== */
+function showShortcutsModal() {
+  var m = document.getElementById('shortcutsModal');
+  if (m) m.classList.add('show');
+}
+function closeShortcutsModal() {
+  var m = document.getElementById('shortcutsModal');
+  if (m) m.classList.remove('show');
+}
+
+document.addEventListener('keydown', function(e) {
+  var target = e.target;
+  var isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+  // ? 显示快捷键
+  if (e.key === '?' && !isInput) {
+    e.preventDefault();
+    showShortcutsModal();
+    return;
+  }
+
+  // Escape 关闭弹窗
+  if (e.key === 'Escape') {
+    closeShortcutsModal();
+    closeAiPanel();
+    var sb = document.getElementById('sidebar');
+    if (sb) sb.classList.remove('mobile-open');
+    return;
+  }
+
+  // 数字键切换 Tab
+  if (!isInput && ['1','2','3','4','5'].indexOf(e.key) >= 0) {
+    var tabs = ['logs', 'alerts', 'dashboard', 'chaos', 'settings'];
+    var idx = parseInt(e.key) - 1;
+    if (tabs[idx]) {
+      var navItem = document.querySelector('.nav-item[data-tab="' + tabs[idx] + '"]');
+      if (navItem) {
+        e.preventDefault();
+        switchTab(tabs[idx], navItem);
+      }
+    }
+    return;
+  }
+
+  // 空格暂停/继续
+  if (e.key === ' ' && !isInput) {
+    e.preventDefault();
+    var btn = document.getElementById('btnPause');
+    if (btn) btn.click();
+    return;
+  }
+
+  // Backspace 清空日志
+  if (e.key === 'Backspace' && !isInput) {
+    e.preventDefault();
+    var btnClear = document.getElementById('btnClearLogs');
+    if (btnClear) btnClear.click();
+    return;
+  }
+
+  // / 聚焦搜索
+  if (e.key === '/' && !isInput) {
+    e.preventDefault();
+    if (searchInput) searchInput.focus();
+    return;
+  }
+
+  // Cmd/Ctrl + K 打开 AI 面板
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    openAiPanel();
+    return;
+  }
+
+  // Cmd/Ctrl + / 切换主题
+  if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+    e.preventDefault();
+    toggleTheme(state.isDark ? 'light' : 'dark');
+    return;
+  }
+});
+
+/* ===== SEARCH WITH DEBOUNCE ===== */
+var searchDebounced = debounce(function(query) {
+  if (!logStream) return;
+  var q = query.toLowerCase().trim();
+  var lines = logStream.querySelectorAll('.log-line');
+  var visible = 0;
+  lines.forEach(function(l) {
+    if (!q) {
+      l.style.display = '';
+      visible++;
+      return;
+    }
+    var text = l.textContent.toLowerCase();
+    var match = text.indexOf(q) >= 0;
+    l.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  if (q) {
+    showToast('🔍 找到 ' + visible + ' 条匹配日志', 'info');
+  }
+}, 250);
+
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    searchDebounced(this.value);
+  });
+}
+
+/* ===== GLOBAL ERROR HANDLER ===== */
+window.addEventListener('error', function(e) {
+  console.error('[LogHawk] Global error:', e.error || e.message);
+  // 静默处理，不打断用户体验
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('[LogHawk] Unhandled promise rejection:', e.reason);
+});
+
+/* ===== PERFORMANCE: rAF BATCHED LOG UPDATES ===== */
+var pendingLogs = [];
+var logFlushScheduled = false;
+function flushLogs() {
+  if (!logStream || pendingLogs.length === 0) {
+    logFlushScheduled = false;
+    return;
+  }
+  var frag = document.createDocumentFragment();
+  pendingLogs.forEach(function(lineHtml) {
+    var div = document.createElement('div');
+    div.innerHTML = lineHtml;
+    frag.appendChild(div.firstChild);
+  });
+  logStream.appendChild(frag);
+  pendingLogs = [];
+
+  // auto-scroll
+  var atBottom = logStream.scrollHeight - logStream.scrollTop - logStream.clientHeight < 60;
+  if (atBottom) logStream.scrollTop = logStream.scrollHeight;
+
+  // cap at 500 lines
+  while (logStream.children.length > 500) logStream.removeChild(logStream.scrollTop > 100 ? logStream.firstChild : logStream.firstChild);
+
+  logFlushScheduled = false;
+}
+
+/* ===== LAZY CHART RENDERING ===== */
+// 仅当 dashboard tab 激活时才渲染图表
+var chartsInitialized = false;
+var originalSwitchTab = switchTab;
+switchTab = function(tab, navEl) {
+  originalSwitchTab(tab, navEl);
+  if (tab === 'dashboard' && !chartsInitialized) {
+    chartsInitialized = true;
+    // 图表已在 initCharts 中初始化，这里只确保数据更新
+    updateCharts();
+  }
+};
+
+/* ===== OFFLINE DETECTION ===== */
+window.addEventListener('online', function() {
+  connManager.setStatus('online');
+  showToast('🌐 网络已恢复', 'success');
+});
+window.addEventListener('offline', function() {
+  connManager.setStatus('offline');
+  showToast('📡 网络连接断开', 'warning');
+});
+
+/* ===== SSE CONNECTION WITH HEARTBEAT & RECONNECT ===== */
+function createSSEConnection(url, onMessage, onError) {
+  var retryCount = 0;
+  var maxRetry = 10;
+  var heartbeatTimer = null;
+  var lastMessageTime = Date.now();
+  var eventSource = null;
+
+  function connect() {
+    try {
+      eventSource = new EventSource(url);
+      eventSource.onopen = function() {
+        retryCount = 0;
+        connManager.setStatus('online');
+        startHeartbeat();
+      };
+      eventSource.onmessage = function(e) {
+        lastMessageTime = Date.now();
+        onMessage && onMessage(e.data);
+      };
+      eventSource.onerror = function() {
+        stopHeartbeat();
+        eventSource.close();
+        if (retryCount < maxRetry) {
+          retryCount++;
+          connManager.setStatus('reconnecting');
+          var delay = Math.min(1000 * Math.pow(2, retryCount - 1), 30000);
+          setTimeout(connect, delay);
+        } else {
+          connManager.setStatus('offline');
+          onError && onError('max retries exceeded');
+        }
+      };
+    } catch(e) {
+      onError && onError(e.message);
+    }
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat();
+    heartbeatTimer = setInterval(function() {
+      if (Date.now() - lastMessageTime > 30000) {
+        eventSource.close();
+        connManager.setStatus('reconnecting');
+        retryCount++;
+        var delay = Math.min(1000 * Math.pow(2, retryCount - 1), 30000);
+        setTimeout(connect, delay);
+      }
+    }, 5000);
+  }
+
+  function stopHeartbeat() {
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+  }
+
+  connect();
+
+  return {
+    close: function() {
+      stopHeartbeat();
+      if (eventSource) eventSource.close();
+    }
+  };
+}
+
+/* ===== BREADCRUMB UPDATE ===== */
+// (集成到现有 switchTab 中，此处为补全)
+
+</script>
+</body>
+</html>

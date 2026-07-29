@@ -1,0 +1,42 @@
+groups:
+  - name: loghawk
+    rules:
+      # ---- Ingest ----
+      - alert: IngestServiceDown
+        expr: up{job="ingest"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Ingest service is down", runbook_url: "https://github.com/linwumu/LogHawk/wiki/alerts"}
+      - alert: IngestQueueGrowing
+        expr: loghawk_ingest_queue_size > 8000
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Ingest ring buffer nearing capacity ({{ $value }}/10000)"}
+      - alert: IngestHighErrorRate
+        expr: rate(loghawk_ingest_requests_total[5m]) > 100
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "High ingest request rate: {{ $value }}/s"}
+      # ---- AI Proxy ----
+      - alert: AIProxyDown
+        expr: up{job="ai-proxy"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "AI Proxy service is down"}
+      - alert: AIPatrolNotRunning
+        expr: loghawk_ai_patrol_active == 0
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "AI patrol has been inactive for 10 minutes"}
+      # ---- Alerter ----
+      - alert: AlerterDown
+        expr: up{job="alerter"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Alerter (WebSocket) service is down"}
+      # ---- Pod restart ----
+      - alert: HighPodRestartRate
+        expr: rate(kube_pod_container_status_restarts_total{namespace="loghawk"}[15m]) > 0.1
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Pod {{ $labels.pod }} restarting frequently"}

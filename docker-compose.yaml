@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  # ---- ��־������� ----
+  ingest:
+    build: ./services/ingest
+    container_name: loghawk-ingest
+    ports:
+      - "8001:8001"
+    environment:
+      - INGEST_PORT=8001
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+  # ---- AI �������� ----
+  ai-proxy:
+    build: ./services/ai-proxy
+    container_name: loghawk-ai-proxy
+    ports:
+      - "8003:8003"
+    environment:
+      - AI_PROXY_PORT=8003
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - PATROL_INTERVAL_SEC=30
+      - KNOWLEDGE_DIR=/knowledge
+    volumes:
+      - ./services/ai-proxy/knowledge:/knowledge:ro
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+  # ---- ǰ�� (Nginx ��̬�й�) ----
+  frontend:
+    image: nginx:alpine
+    container_name: loghawk-frontend
+    ports:
+      - "30080:80"
+    volumes:
+      - ./services/frontend:/usr/share/nginx/html:ro
+      - ./services/frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+  # ---- PostgreSQL ----
+  postgres:
+    image: postgres:15-alpine
+    container_name: loghawk-postgres
+    environment:
+      - POSTGRES_USER=loghawk
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-<CHANGE_ME_PASSWORD>}
+      - POSTGRES_DB=loghawk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+  # ---- RabbitMQ ----
+  rabbitmq:
+    image: rabbitmq:3.12-alpine
+    container_name: loghawk-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=loghawk
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-<CHANGE_ME_PASSWORD>}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+  # ---- Redis ----
+  redis:
+    image: redis:7-alpine
+    container_name: loghawk-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - loghawk
+
+volumes:
+  pgdata:
+
+networks:
+  loghawk:
+    driver: bridge

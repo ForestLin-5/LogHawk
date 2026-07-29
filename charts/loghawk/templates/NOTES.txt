@@ -1,0 +1,6 @@
+🦅 LogHawk 已部署！
+
+  export NODE_PORT=$(kubectl -n {{ .Values.global.namespace }} get svc loghawk-frontend -o jsonpath='{.spec.ports[0].nodePort}')
+  echo "前端: http://YOUR_NODE_IP:$NODE_PORT"
+
+  echo "Grafana: http://YOUR_NODE_IP:30300 (admin/<CHANGE_ME_GRAFANA_PASSWORD>)"

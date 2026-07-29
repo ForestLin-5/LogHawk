@@ -1,0 +1,56 @@
+# LogHawk .gitignore
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+services/*/ingest
+services/*/ai-proxy
+services/*/alerter
+services/*/chaos
+services/*/collector
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.tar
+
+# Temp scripts
+fix_all.py
+
+# Environment
+.env
+.env.local
+
+# K8s secrets (generated)
+*kubeconfig*
+*admin.conf*
+
+# Node
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/

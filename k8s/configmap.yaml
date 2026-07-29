@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loghawk-config
+  namespace: loghawk
+data:
+  LOG_LEVEL: "info"
+  INGEST_PORT: "8001"
+  AI_PROXY_PORT: "8003"
+  ALERTER_PORT: "8004"
+  CHAOS_PORT: "8005"
+  RABBITMQ_HOST: "rabbitmq.loghawk"
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_QUEUE: "log-stream"
+  POSTGRES_HOST: "postgres.loghawk"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "loghawk"
+  REDIS_HOST: "redis.loghawk"
+  REDIS_PORT: "6379"

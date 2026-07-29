@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alerter
+  namespace: loghawk
+spec:
+  selector:
+    app: alerter
+  ports:
+  - port: 8004
+    targetPort: 8004
+    name: ws
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alerter
+  namespace: loghawk
+  labels:
+    app: alerter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alerter
+  template:
+    metadata:
+      labels:
+        app: alerter
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8004'
+    spec:
+      terminationGracePeriodSeconds: 10
+      imagePullSecrets:
+      - name: aliyun-registry
+      containers:
+      - name: alerter
+        image: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen/alerter:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8004
+        env:
+        - name: ALERTER_PORT
+          value: '8004'
+        - name: RABBITMQ_HOST
+          value: 'rabbitmq.loghawk'
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: loghawk-secret
+              key: RABBITMQ_PASS
+        resources:
+          requests:
+            memory: 16Mi
+            cpu: 10m
+          limits:
+            memory: 32Mi
+            cpu: 50m
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8004
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8004
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 5
