@@ -2323,7 +2323,7 @@ function fetchAlerts() {
         level: a.level,
         title: a.title,
         desc: a.message,
-        time: a.timestamp ? a.timestamp.substring(11, 19) : '',
+        time: toBJTime(a.timestamp),
         ai: '由 LogHawk Alerter 自动触发',
         id: id
       });
@@ -2364,7 +2364,7 @@ function fetchLogs() {
       seenLogKeys[key] = true;
       // level color class
       var lvlCls = e.level || 'INFO';
-      var ts = e.timestamp ? e.timestamp.substring(11, 19) : '';
+      var ts = toBJTime(e.timestamp);
       var svc = e.service || '-';
       var msg = e.message || '';
       var line =
@@ -3039,6 +3039,13 @@ function getChaosEp() {
 //   - endpoint is empty (not configured)
 //   - running on localhost/127.0.0.1 and endpoint points to K8s internal DNS
 // This prevents net::ERR_NAME_NOT_RESOLVED console errors in local dev.
+function toBJTime(ts) {
+  if (!ts) return '';
+  var d = new Date(ts);
+  var h = (d.getUTCHours() + 8) % 24;
+  return ('0' + h).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2) + ':' + ('0' + d.getUTCSeconds()).slice(-2);
+}
+
 function chaosReachable() {
   var ep = getChaosEp();
   if (!ep) return false;

@@ -29,7 +29,7 @@ spec:
         runAsUser: 0
       containers:
       - name: collector
-        image: loghawk/log-collector:v1.0.0
+        image: crpi-kwcxn84zbm6expkn.cn-guangzhou.personal.cr.aliyuncs.com/linwumu/linhaosen:log-collector-v1.0.1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

@@ -227,17 +227,37 @@ func (c *Collector) Collect(ctx context.Context) ([]LogEntry, error) {
 }
 
 func serviceName(fileName string) string {
-	svc := strings.TrimSuffix(fileName, ".log")
-	if idx := strings.LastIndex(svc, "_"); idx > 0 {
-		svc = svc[:idx]
+	// CRI log filename: <pod>_<namespace>_<container>-<container-id>.log
+	name := strings.TrimSuffix(fileName, ".log")
+	// Strip container ID hash (last segment after '-')
+	if idx := strings.LastIndex(name, "-"); idx > 0 {
+		name = name[:idx]
 	}
-	return svc
+	// name is now <pod>_<namespace>_<container>
+	// Extract container name (last segment after '_')
+	if idx := strings.LastIndex(name, "_"); idx > 0 {
+		return name[idx+1:]
+	}
+	return name
 }
 
 func extractMessage(raw string) string {
+	// Try plain JSON first (legacy or custom format)
 	var cri criLogLine
 	if err := json.Unmarshal([]byte(raw), &cri); err == nil && cri.Log != "" {
 		return strings.TrimSpace(cri.Log)
+	}
+	// CRI-O / containerd JSON format:
+	// YYYY-MM-DDTHH:MM:SS... stderr F {"log":"...","stream":"...","time":"..."}
+	if idx := strings.Index(raw, "{"); idx > 0 {
+		if err := json.Unmarshal([]byte(raw[idx:]), &cri); err == nil && cri.Log != "" {
+			return strings.TrimSpace(cri.Log)
+		}
+	}
+	// CRI plain text format:
+	// YYYY-MM-DDTHH:MM:SS... stderr F <actual log content>
+	if parts := strings.SplitN(raw, " ", 4); len(parts) >= 4 {
+		return strings.TrimSpace(parts[3])
 	}
 	return raw
 }
@@ -247,7 +267,7 @@ func detectLevel(msg string) string {
 	switch {
 	case strings.Contains(upper, "CRIT"), strings.Contains(upper, "FATAL"):
 		return "CRIT"
-	case strings.Contains(upper, "ERROR"), strings.Contains(upper, "ERR"):
+	case strings.Contains(upper, "ERROR"):
 		return "ERROR"
 	case strings.Contains(upper, "WARN"), strings.Contains(upper, "WARNING"):
 		return "WARN"
