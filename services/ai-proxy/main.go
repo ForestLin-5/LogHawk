@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"bufio"
@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-// ===== TYPES =====
+// ---- 数据结构 ----
 
 type LogEntry struct {
 	Timestamp string `json:"timestamp"`
@@ -61,7 +61,7 @@ type PatrolStatus struct {
 	Findings int    `json:"findings"`
 }
 
-// ===== CONFIG =====
+// ---- 配置 ----
 
 var (
 	apiKey         = os.Getenv("OPENAI_API_KEY")
@@ -90,7 +90,7 @@ func envOrInt(key string, fallback int) int {
 	return fallback
 }
 
-// ===== LOG BUFFER (ring buffer for patrol) =====
+// ---- 日志缓冲区（巡检用） ----
 
 type LogBuffer struct {
 	mu   sync.RWMutex
@@ -126,7 +126,7 @@ func (lb *LogBuffer) Snapshot(lastN int) []LogEntry {
 	return out
 }
 
-// ===== PATROL SCHEDULER =====
+// ---- 巡检调度 ----
 
 type PatrolScheduler struct {
 	mu          sync.Mutex
@@ -226,7 +226,7 @@ func (ps *PatrolScheduler) broadcast(msg string) {
 		select {
 		case ch <- msg:
 		default:
-			// drop if subscriber is slow
+			// 慢消费者直接丢弃
 		}
 	}
 }
@@ -238,7 +238,7 @@ func (ps *PatrolScheduler) runAnalysis() {
 		return
 	}
 
-	// Count errors/warns for quick pre-check
+	// 统计错误/警告数量，快速预检
 	var errCount, warnCount int
 	for _, l := range logs {
 		switch l.Level {
@@ -286,7 +286,7 @@ func (ps *PatrolScheduler) runAnalysis() {
 		}
 	}
 
-	// Broadcast final finding
+	// 广播巡检结果
 	if fullResponse.Len() > 0 {
 		ps.broadcast(fmt.Sprintf(`{"type":"finding","content":%q}`, fullResponse.String()))
 	} else {
@@ -294,7 +294,7 @@ func (ps *PatrolScheduler) runAnalysis() {
 	}
 }
 
-// ===== GOOFY SYSTEM PROMPT (rude ops veteran persona) =====
+// ---- AI 角色设定（暴躁运维老哥） ----
 
 func buildGoofySystemPrompt() string {
 	return `You are LogHawk's AI ops sidekick. A grizzled, foul-mouthed veteran who's seen too many 3am pages.
@@ -369,7 +369,7 @@ Log data:
 	}
 }
 
-// ===== SESSION STORE (multi-round conversation memory) =====
+// ---- 会话存储（多轮对话记忆） ----
 
 type SessionStore struct {
 	mu       sync.Mutex
@@ -404,7 +404,7 @@ func (ss *SessionStore) Clear(sessionID string) {
 	delete(ss.sessions, sessionID)
 }
 
-// ===== KNOWLEDGE BASE (RAG - file-based) =====
+// ---- 知识库（RAG，文件加载） ----
 
 type KnowledgeBase struct {
 	mu   sync.RWMutex
@@ -459,7 +459,7 @@ func (kb *KnowledgeBase) Context() string {
 	return sb.String()
 }
 
-// ===== SYSTEM PROMPT BUILDER =====
+// ---- 系统提示词构建 ----
 
 func buildSystemPrompt() string {
 	prompt := `You are LogHawk log analysis platform's AI ops agent.
@@ -496,7 +496,7 @@ Professional, calm, precise. No fluff.` + knowledgeBase.Context()
 	return prompt
 }
 
-// ===== GLOBALS =====
+// ---- 全局变量 ----
 
 var (
 	logBuffer     = NewLogBuffer(1000)
@@ -505,9 +505,9 @@ var (
 	knowledgeBase = NewKnowledgeBase(knowledgeDir)
 )
 
-// ===== MAIN =====
+// ---- 主函数 ----
 
-// ===== PROMETHEUS METRICS =====
+// ---- Prometheus 指标 ----
 var (
 	metricAIReqs     int64
 	metricAIFindings int64
@@ -536,7 +536,7 @@ loghawk_ai_knowledge_docs %d
 `, reqs, findings, patrolActive, len(knowledgeBase.docs))
 }
 
-// jsonLog outputs a structured JSON log line
+// jsonLog 输出结构化 JSON 日志
 func jsonLog(level, msg string, fields map[string]interface{}) {
 	entry := map[string]interface{}{
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
@@ -561,24 +561,24 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Core
+	// 核心路由
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/metrics", handleMetrics)
 
-	// AI analysis
+	// AI 分析
 	mux.HandleFunc("/api/analyze", handleAnalyze) // stateless (legacy)
 	mux.HandleFunc("/api/chat", handleChat)       // multi-round with session
 
-	// Log ingestion (for patrol)
+	// 日志投喂
 	mux.HandleFunc("/api/logs/ingest", handleLogIngest)
 
-	// Patrol
+	// 巡检
 	mux.HandleFunc("/api/patrol/start", handlePatrolStart)
 	mux.HandleFunc("/api/patrol/stop", handlePatrolStop)
 	mux.HandleFunc("/api/patrol/status", handlePatrolStatus)
 	mux.HandleFunc("/api/patrol/stream", handlePatrolStream)
 
-	// Knowledge
+	// 知识库
 	mux.HandleFunc("/api/knowledge/reload", handleKnowledgeReload)
 
 	addr := ":" + listenPort
@@ -596,7 +596,7 @@ func main() {
 		WriteTimeout: 5 * time.Minute,
 		IdleTimeout:  120 * time.Second,
 	}
-	// Graceful shutdown
+	// 优雅退出
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server error: %v", err)
@@ -624,7 +624,7 @@ func min(a, b int) int {
 	return b
 }
 
-// ===== HANDLERS =====
+// ---- HTTP 接口 ----
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -640,7 +640,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ===== ANALYZE (stateless, legacy) =====
+// ---- 单次分析（无状态） ----
 
 func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	atomic.AddInt64(&metricAIReqs, 1)
@@ -678,7 +678,7 @@ func handleAnalyze(w http.ResponseWriter, r *http.Request) {
 	streamAIResponse(w, messages)
 }
 
-// ===== CHAT (multi-round with session) =====
+// ---- 多轮对话（带会话） ----
 
 func handleChat(w http.ResponseWriter, r *http.Request) {
 	atomic.AddInt64(&metricAIReqs, 1)
@@ -700,7 +700,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		sessionID = "default"
 	}
 
-	// Build messages with history
+	// 拼接历史消息
 	history := sessions.Get(sessionID)
 	messages := make([]ChatMessage, 0, len(history)+3)
 	if len(history) == 0 {
@@ -713,7 +713,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 		messages = append(messages, history...)
 	}
 
-	// Add log context
+	// 附上日志上下文
 	if len(req.Logs) > 0 {
 		var ctx strings.Builder
 		ctx.WriteString("Current log context:\n```\n")
@@ -726,7 +726,7 @@ func handleChat(w http.ResponseWriter, r *http.Request) {
 
 	messages = append(messages, ChatMessage{Role: "user", Content: req.Question})
 
-	// Stream response and capture for history
+	// 流式返回并保存到历史
 	streamAIWithHistory(w, messages, sessionID)
 }
 
@@ -752,7 +752,7 @@ func streamAIWithHistory(w http.ResponseWriter, messages []ChatMessage, sessionI
 		if data == "[DONE]" {
 			sendSSE(w, "[DONE]")
 			flusher.Flush()
-			// Save to session history
+			// 写入会话历史
 			sessions.Append(sessionID, ChatMessage{Role: "user", Content: messages[len(messages)-1].Content})
 			sessions.Append(sessionID, ChatMessage{Role: "assistant", Content: fullResponse.String()})
 			return
@@ -777,7 +777,7 @@ func streamAIWithHistory(w http.ResponseWriter, messages []ChatMessage, sessionI
 	}
 }
 
-// ===== LOG INGEST (feeds patrol buffer) =====
+// ---- 日志投喂（给巡检用） ----
 
 func handleLogIngest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -797,7 +797,7 @@ func handleLogIngest(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ===== PATROL =====
+// ---- 巡检 ----
 
 func handlePatrolStart(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -831,7 +831,7 @@ func handlePatrolStream(w http.ResponseWriter, r *http.Request) {
 	ch := patrol.Subscribe()
 	defer patrol.Unsubscribe(ch)
 
-	// Send initial status
+	// 发送初始状态
 	status, _ := json.Marshal(patrol.Status())
 	fmt.Fprintf(w, "data: {\"type\":\"status\",\"content\":%s}\n\n", string(status))
 	flusher.Flush()
@@ -851,7 +851,7 @@ func handlePatrolStream(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ===== KNOWLEDGE RELOAD =====
+// ---- 知识库热更新 ----
 
 func handleKnowledgeReload(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -866,7 +866,7 @@ func handleKnowledgeReload(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ===== AI HELPERS =====
+// ---- AI 调用辅助 ----
 
 func streamAIResponse(w http.ResponseWriter, messages []ChatMessage) {
 	stream, err := callOpenAI(messages)
@@ -942,7 +942,7 @@ func callOpenAI(messages []ChatMessage) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// ===== SSE HELPERS =====
+// ---- SSE 辅助 ----
 
 func setupSSE(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/event-stream")
@@ -964,7 +964,7 @@ func writeSSEError(w http.ResponseWriter, msg string) {
 	}
 }
 
-// ===== MIDDLEWARE =====
+// ---- 中间件 ----
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 
 const maxClients = 1000
 
-// LogEntry matches ingest.LogEntry
+// LogEntry 与 ingest 的 LogEntry 结构一致
 type LogEntry struct {
 	Timestamp string `json:"timestamp"`
 	Level     string `json:"level"`
@@ -27,7 +27,7 @@ type LogEntry struct {
 	Message   string `json:"message"`
 }
 
-// Alert represents a structured alert message
+// Alert 告警消息
 type Alert struct {
 	ID        string `json:"id"`
 	Level     string `json:"level"`
@@ -38,7 +38,7 @@ type Alert struct {
 	Service   string `json:"service,omitempty"`
 }
 
-// Hub maintains the set of active WebSocket clients
+// Hub 管理所有活跃的 WebSocket 连接
 type Hub struct {
 	mu      sync.RWMutex
 	clients map[*websocket.Conn]bool
@@ -46,7 +46,7 @@ type Hub struct {
 	maxHist int
 }
 
-// RuleEngine tracks log entries within a sliding window and triggers alerts.
+// RuleEngine 滑动窗口统计日志，触发告警
 type RuleEngine struct {
 	mu          sync.Mutex
 	entries     []timedEntry
@@ -83,7 +83,7 @@ func envOr(k, d string) string {
 	return d
 }
 
-// ---------- Hub methods ----------
+// ---- Hub 方法 ----
 
 func (h *Hub) add(ws *websocket.Conn) error {
 	h.mu.Lock()
@@ -140,7 +140,7 @@ func (h *Hub) count() int {
 	return len(h.clients)
 }
 
-// ---------- Rule Engine ----------
+// ---- 规则引擎 ----
 
 func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 	re.mu.Lock()
@@ -149,7 +149,7 @@ func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 	now := time.Now()
 	re.entries = append(re.entries, timedEntry{ts: now, entry: e})
 
-	// Trim entries older than 2 minutes
+	// 清理超过 2 分钟的旧日志
 	cutoff := now.Add(-2 * time.Minute)
 	valid := re.entries[:0]
 	for _, te := range re.entries {
@@ -159,7 +159,7 @@ func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 	}
 	re.entries = valid
 
-	// Count by level within 1 minute window
+	// 统计 1 分钟窗口内各级别日志数量
 	oneMinAgo := now.Add(-1 * time.Minute)
 	var err1m, crit1m int
 	var svcErrs = make(map[string]int) // service errors in 2 min
@@ -179,7 +179,7 @@ func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 
 	var alerts []ruleAlert
 
-	// Rule 1: CRIT level triggers immediate alert
+	// 规则1：CRIT 级别立即告警
 	if crit1m >= 1 {
 		alerts = append(alerts, ruleAlert{
 			id:     fmt.Sprintf("crit-%d", alertIDGen),
@@ -193,7 +193,7 @@ func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 		})
 	}
 
-	// Rule 2: ERROR burst — >5 ERRORs in 1 minute
+	// 规则2：1 分钟内 ERROR 超过 5 条触发
 	if err1m > 5 {
 		alerts = append(alerts, ruleAlert{
 			id:     fmt.Sprintf("err-burst-%d", alertIDGen),
@@ -207,7 +207,7 @@ func (re *RuleEngine) feed(e LogEntry) []ruleAlert {
 		})
 	}
 
-	// Rule 3: Single service error concentration — >10 ERRORs in 2 minutes
+	// 规则3：2 分钟内同一服务 ERROR 超过 10 条触发
 	for svc, count := range svcErrs {
 		if count > 10 {
 			key := "svc-err-" + svc
@@ -243,7 +243,7 @@ func generateID() string {
 	return fmt.Sprintf("alert-%d-%d", time.Now().Unix(), alertIDGen)
 }
 
-// ---------- RabbitMQ Consumer ----------
+// ---- RabbitMQ 消费 ----
 
 func consumeRabbitMQ() {
 	host := os.Getenv("RABBITMQ_HOST")
@@ -342,7 +342,7 @@ func consumeRabbitMQ() {
 	}
 }
 
-// ---------- HTTP Handlers ----------
+// ---- HTTP 接口 ----
 
 func handleWS(ws *websocket.Conn) {
 	if err := hub.add(ws); err != nil {
@@ -416,7 +416,7 @@ func main() {
 		}
 	}()
 
-	// Start RabbitMQ consumer
+	// 启动 RabbitMQ 消费者
 	go consumeRabbitMQ()
 
 	quit := make(chan os.Signal, 1)

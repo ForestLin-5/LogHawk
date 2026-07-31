@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// ===== TYPES =====
+// ---- 数据结构 ----
 
 type Scenario struct {
 	ID           string   `json:"id"`
@@ -151,7 +151,7 @@ var scenarios = []Scenario{
 }
 
 func main() {
-	// Init K8s client
+	// 初始化 K8s 客户端
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Fatalf("Failed to get in-cluster config: %v (are you running in K8s?)", err)
@@ -204,7 +204,7 @@ func main() {
 	log.Println("chaos stopped")
 }
 
-// ===== HANDLERS =====
+// ---- HTTP 接口 ----
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "active": activeID})
@@ -268,7 +268,7 @@ func handleReset(w http.ResponseWriter, r *http.Request) {
 	activeID = ""
 	startTimes = make(map[string]time.Time)
 
-	// Reset all scenarios
+	// 重置所有场景
 	rctx, rcancel := k8sCtx()
 	defer rcancel()
 	for _, s := range scenarios {
@@ -296,7 +296,7 @@ func handleBreak(w http.ResponseWriter, r *http.Request) {
 	activeID = sid
 	startTimes[sid] = time.Now()
 
-	// Start auto-recovery timer (5 minutes)
+	// 启动 5 分钟自动恢复计时器
 	if autoTimer != nil {
 		autoTimer.Stop()
 	}
@@ -354,14 +354,14 @@ func handleVerify(w http.ResponseWriter, r *http.Request) {
 		delete(startTimes, sid)
 		mu.Unlock()
 
-		// Reset the scenario to clean state
+		// 恢复场景到干净状态
 		resetScenario(vctx, sid)
 	}
 
 	json.NewEncoder(w).Encode(result)
 }
 
-// ===== SCENARIO INJECTORS =====
+// ---- 故障注入 ----
 
 func injectScenario(ctx context.Context, sid string) error {
 	switch sid {
@@ -418,14 +418,14 @@ func resetScenario(ctx context.Context, sid string) {
 	}
 }
 
-// ===== SCENARIO 1: Pod Crash (wrong image) =====
+// ---- 场景1：Pod 崩溃（篡改镜像） ----
 
 func injectPodCrash(ctx context.Context) error {
 	deploy, err := clientset.AppsV1().Deployments(namespace).Get(ctx, "ingest", metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("get deploy: %w", err)
 	}
-	// Change image to non-existent tag
+	// 把镜像 tag 改成不存在的版本
 	for i := range deploy.Spec.Template.Spec.Containers {
 		if deploy.Spec.Template.Spec.Containers[i].Name == "ingest" {
 			deploy.Spec.Template.Spec.Containers[i].Image = "loghawk/ingest:broken-tag-does-not-exist"
@@ -445,7 +445,7 @@ func verifyPodCrash(ctx context.Context) VerifyResult {
 			return VerifyResult{Passed: false, Message: "Image is still broken, not fixed yet"}
 		}
 	}
-	// Check pods are running
+	// 检查 Pod 是否正常运行
 	pods, _ := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "app=ingest"})
 	running := 0
 	for _, p := range pods.Items {
@@ -476,7 +476,7 @@ func resetPodCrash(ctx context.Context) {
 	}
 }
 
-// ===== SCENARIO 2: Service Broken (wrong selector) =====
+// ---- 场景2：Service 失效（改错 selector） ----
 
 func injectServiceBroken(ctx context.Context) error {
 	svc, err := clientset.CoreV1().Services(namespace).Get(ctx, "ingest", metav1.GetOptions{})
@@ -510,7 +510,7 @@ func resetServiceBroken(ctx context.Context) {
 	}
 }
 
-// ===== SCENARIO 3: Config Messed =====
+// ---- 场景3：配置被篡改 ----
 
 func injectConfigMessed(ctx context.Context) error {
 	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "loghawk-config", metav1.GetOptions{})
@@ -544,7 +544,7 @@ func resetConfigMessed(ctx context.Context) {
 	}
 }
 
-// ===== SCENARIO 4: Scale to Zero =====
+// ---- 场景4：副本缩零 ----
 
 func injectScaleZero(ctx context.Context) error {
 	scale, err := clientset.AppsV1().Deployments(namespace).GetScale(ctx, "ingest", metav1.GetOptions{})
@@ -589,7 +589,7 @@ func resetScaleZero(ctx context.Context) {
 	}
 }
 
-// ===== SCENARIO 5: Network Blocked =====
+// ---- 场景5：网络阻断 ----
 
 func injectNetworkBlock(ctx context.Context) error {
 	policy := &networkingv1.NetworkPolicy{
@@ -618,10 +618,10 @@ func resetNetworkBlock(ctx context.Context) {
 	clientset.NetworkingV1().NetworkPolicies(namespace).Delete(ctx, "deny-all-chaos", metav1.DeleteOptions{})
 }
 
-// ===== SCENARIO 6: Disk Full =====
+// ---- 场景6：磁盘填满 ----
 
 func injectDiskFull(ctx context.Context) error {
-	// Create a Pod that fills disk
+	// 起一个填磁盘的 Pod
 	diskFiller := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "disk-filler-chaos",

@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// LogEntry represents a single log line.
+// LogEntry 一条日志
 type LogEntry struct {
 	Timestamp string `json:"timestamp"`
 	Level     string `json:"level"`
@@ -28,14 +28,14 @@ type LogEntry struct {
 	Message   string `json:"message"`
 }
 
-// IngestResponse is returned to callers of POST /ingest.
+// IngestResponse POST /ingest 的返回值
 type IngestResponse struct {
 	RequestID string `json:"request_id"`
 	Ingested  int    `json:"ingested"`
 	QueueSize int    `json:"queue_size"`
 }
 
-// Stats holds basic service statistics.
+// Stats 服务运行统计
 type Stats struct {
 	TotalIngested int       `json:"total_ingested"`
 	QueueSize     int       `json:"queue_size"`
@@ -58,9 +58,7 @@ func envOr(key, fallback string) string {
 	return fallback
 }
 
-// RingBuffer is a thread-safe ring buffer that also broadcasts new entries to
-// subscribed SSE clients. Broadcasting here avoids the unsafe "slice by global
-// queue size" pattern that breaks under concurrent consumers.
+// RingBuffer 线程安全的环形缓冲区，同时把新日志推给所有 SSE 客户端。\n// 在 RingBuffer 里广播，避免了并发下"按全局队列长度切片"的不安全问题
 type RingBuffer struct {
 	mu          sync.RWMutex
 	data        []LogEntry
@@ -93,7 +91,7 @@ func (rb *RingBuffer) Push(entries []LogEntry) {
 	}
 	rb.mu.Unlock()
 
-	// Non-blocking fan-out: drop to slow consumers rather than block ingestion.
+	// 非阻塞分发：慢消费者直接丢弃，不拖慢采集
 	for _, ch := range subs {
 		select {
 		case ch <- entries:
@@ -127,8 +125,7 @@ func (rb *RingBuffer) Len() int {
 	return rb.size
 }
 
-// Subscribe returns a buffered channel that receives batches of new entries.
-// Callers must call Unsubscribe to avoid leaks.
+// Subscribe 返回一个带缓冲的 channel，接收新日志批次。调用方必须调 Unsubscribe 防止泄漏
 func (rb *RingBuffer) Subscribe() chan []LogEntry {
 	ch := make(chan []LogEntry, 16)
 	rb.mu.Lock()
@@ -150,7 +147,7 @@ func genRequestID() string {
 	return hex.EncodeToString(b)
 }
 
-// ===== RABBITMQ PUBLISH =====
+// ---- RabbitMQ 发布 ----
 var (
 	rmqConn    *amqp.Connection
 	rmqCh      *amqp.Channel
@@ -207,7 +204,7 @@ func initRabbitMQ() {
 	rmqEnabled = true
 	log.Printf("[INGEST] RabbitMQ connected, publishing to queue 'logs'")
 
-	// Watch for connection close and reconnect
+	// 监听连接断开，自动重连
 	go func() {
 		closeErr := <-rmqConn.NotifyClose(make(chan *amqp.Error))
 		log.Printf("[INGEST] RabbitMQ connection lost: %v", closeErr)
@@ -235,7 +232,7 @@ func publishToQueue(entries []LogEntry) {
 	}
 }
 
-// POST /ingest
+
 func handleIngest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -271,7 +268,7 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GET /logs
+
 func handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	entries := logBuffer.Snapshot(500)
 	if entries == nil {
@@ -281,7 +278,7 @@ func handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(entries)
 }
 
-// GET /logs/stream -- SSE
+/stream -- SSE
 func handleLogStream(w http.ResponseWriter, r *http.Request) {
 	atomic.AddInt64(&metricSSEClients, 1)
 	defer atomic.AddInt64(&metricSSEClients, -1)
@@ -292,7 +289,7 @@ func handleLogStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Accel-Buffering", "no")
 	flusher := w.(http.Flusher)
 
-	// Subscribe to the ring buffer to receive per-client new-entry
+	// 订阅 RingBuffer，每个客户端独立接收新日志
 	// notifications instead of slicing based on global queue size, which is
 	// unsafe when multiple clients consume concurrently and the buffer wraps.
 	sub := logBuffer.Subscribe()

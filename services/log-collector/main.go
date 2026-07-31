@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"bytes"
@@ -69,14 +69,14 @@ func envOrDuration(key string, fallback time.Duration) time.Duration {
 	return fallback
 }
 
-// OffsetStore persists per-file byte offsets so restarts resume without duplicates.
+// OffsetStore 记录每个文件的读取位置，重启后从上次位置继续，不重复采集
 type OffsetStore struct {
 	mu      sync.RWMutex
 	offsets map[string]int64
 	path    string
 }
 
-// shim os methods for testability
+// 封装 OS 方法，方便测试
 var (
 	osReadFile  = os.ReadFile
 	osWriteFile = os.WriteFile
@@ -129,7 +129,7 @@ func (s *OffsetStore) Set(path string, off int64) {
 	s.mu.Unlock()
 }
 
-// Collector reads container logs and ships them to ingest with retries.
+// Collector 采集容器日志，发给 ingest，失败自动重试
 type Collector struct {
 	store  *OffsetStore
 	http   *http.Client
@@ -215,9 +215,8 @@ func (c *Collector) Collect(ctx context.Context) ([]LogEntry, error) {
 			}
 		}
 
-		// Only advance offset for bytes we successfully parsed. If we hit the
-		// batch limit before EOF we still advance to current file size; the
-		// remaining bytes will be collected on the next tick.
+		// 只推进已成功解析的字节。遇到批量上限时先跳到当前文件末尾，
+		// 剩下的下次采集再处理
 		c.store.Set(path, size)
 		if len(entries) >= batchSize {
 			break
@@ -227,14 +226,14 @@ func (c *Collector) Collect(ctx context.Context) ([]LogEntry, error) {
 }
 
 func serviceName(fileName string) string {
-	// CRI log filename: <pod>_<namespace>_<container>-<container-id>.log
+	// CRI 日志文件名格式：<pod>_<namespace>_<container>-<container-id>.log
 	name := strings.TrimSuffix(fileName, ".log")
-	// Strip container ID hash (last segment after '-')
+	// 去掉末尾容器 ID 哈希
 	if idx := strings.LastIndex(name, "-"); idx > 0 {
 		name = name[:idx]
 	}
-	// name is now <pod>_<namespace>_<container>
-	// Extract container name (last segment after '_')
+	// 现在 name = <pod>_<namespace>_<container>
+	// 取容器名（最后一段）
 	if idx := strings.LastIndex(name, "_"); idx > 0 {
 		return name[idx+1:]
 	}
@@ -242,20 +241,20 @@ func serviceName(fileName string) string {
 }
 
 func extractMessage(raw string) string {
-	// Try plain JSON first (legacy or custom format)
+	// 先按普通 JSON 解析
 	var cri criLogLine
 	if err := json.Unmarshal([]byte(raw), &cri); err == nil && cri.Log != "" {
 		return strings.TrimSpace(cri.Log)
 	}
-	// CRI-O / containerd JSON format:
-	// YYYY-MM-DDTHH:MM:SS... stderr F {"log":"...","stream":"...","time":"..."}
+	// containerd CRI JSON 格式：
+	// 时间戳 stream F {"log":"...","stream":"...","time":"..."}
 	if idx := strings.Index(raw, "{"); idx > 0 {
 		if err := json.Unmarshal([]byte(raw[idx:]), &cri); err == nil && cri.Log != "" {
 			return strings.TrimSpace(cri.Log)
 		}
 	}
-	// CRI plain text format:
-	// YYYY-MM-DDTHH:MM:SS... stderr F <actual log content>
+	// CRI 纯文本格式：
+	// 时间戳 stream F {"log":"...","stream":"...","time":"..."}
 	if parts := strings.SplitN(raw, " ", 4); len(parts) >= 4 {
 		return strings.TrimSpace(parts[3])
 	}
